@@ -36,7 +36,11 @@ import org.camunda.bpm.engine.AuthenticationException;
 import org.camunda.bpm.engine.BadUserRequestException;
 import org.camunda.bpm.engine.IdentityService;
 import org.camunda.bpm.engine.OptimisticLockingException;
+import org.camunda.bpm.engine.ProcessEngine;
+import org.camunda.bpm.engine.ProcessEngineConfiguration;
 import org.camunda.bpm.engine.ProcessEngineException;
+import org.camunda.bpm.engine.ProcessEngines;
+import org.camunda.bpm.engine.authorization.Authorization;
 import org.camunda.bpm.engine.identity.Group;
 import org.camunda.bpm.engine.identity.Picture;
 import org.camunda.bpm.engine.identity.User;
@@ -56,6 +60,8 @@ import org.junit.rules.ExpectedException;
  */
 public class IdentityServiceTest {
 
+  private final String INVALID_ID_MESSAGE = " has an invalid id: id cannot be ";
+
   private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
   @Rule
@@ -65,6 +71,7 @@ public class IdentityServiceTest {
   public ExpectedException thrown = ExpectedException.none();
 
   protected IdentityService identityService;
+  protected ProcessEngine processEngine;
 
   @Before
   public void init() {
@@ -80,6 +87,11 @@ public class IdentityServiceTest {
       identityService.deleteGroup(group.getId());
     }
     ClockUtil.setCurrentTime(new Date());
+
+    if (processEngine != null) {
+      processEngine.close();
+      ProcessEngines.unregister(processEngine);
+    }
   }
 
   @Test
@@ -535,22 +547,46 @@ public class IdentityServiceTest {
 
   @Test
   public void testSaveUserWithGenericResourceId() {
-    User user = identityService.newUser("*");
+    processEngine = ProcessEngineConfiguration
+      .createProcessEngineConfigurationFromResource("org/camunda/bpm/engine/test/api/identity/generic.resource.id.whitelist.camunda.cfg.xml")
+      .buildProcessEngine();
+
+    User user = processEngine.getIdentityService().newUser("*");
 
     thrown.expect(ProcessEngineException.class);
     thrown.expectMessage("has an invalid id: id cannot be *. * is a reserved identifier.");
 
-    identityService.saveUser(user);
+    processEngine.getIdentityService().saveUser(user);
+
+    for (User usr : processEngine.getIdentityService().createUserQuery().list()) {
+      processEngine.getIdentityService().deleteUser(usr.getId());
+    }
+    for (Authorization authorization : processEngine.getAuthorizationService().createAuthorizationQuery().list()) {
+      processEngine.getAuthorizationService().deleteAuthorization(authorization.getId());
+    }
+
+
   }
 
   @Test
   public void testSaveGroupWithGenericResourceId() {
-    Group group = identityService.newGroup("*");
+    processEngine = ProcessEngineConfiguration
+      .createProcessEngineConfigurationFromResource("org/camunda/bpm/engine/test/api/identity/generic.resource.id.whitelist.camunda.cfg.xml")
+      .buildProcessEngine();
+
+    Group group = processEngine.getIdentityService().newGroup("*");
 
     thrown.expect(ProcessEngineException.class);
     thrown.expectMessage("has an invalid id: id cannot be *. * is a reserved identifier.");
 
-    identityService.saveGroup(group);
+    processEngine.getIdentityService().saveGroup(group);
+
+    for (Group grp : processEngine.getIdentityService().createGroupQuery().list()) {
+      processEngine.getIdentityService().deleteGroup(grp.getId());
+    }
+    for (Authorization authorization : processEngine.getAuthorizationService().createAuthorizationQuery().list()) {
+      processEngine.getAuthorizationService().deleteAuthorization(authorization.getId());
+    }
   }
 
   @Test
@@ -839,6 +875,143 @@ public class IdentityServiceTest {
     identityService.deleteUser("jackblack");
     identityService.deleteUser("joesmoe");
     identityService.deleteUser("johndoe");
+  }
+
+  @Test
+  public void testInvalidUserId() {
+    try {
+      identityService.newUser("john doe");
+      fail("Invalid user id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("User" + INVALID_ID_MESSAGE + "john doe.", ex.getMessage());
+    }
+  }
+
+  @Test
+  public void testInvalidUserIdOnSave() {
+    try {
+      User updatedUser = identityService.newUser("john");
+      updatedUser.setId("john doe");
+      identityService.saveUser(updatedUser);
+
+      fail("Invalid user id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("User" + INVALID_ID_MESSAGE + "john doe.", ex.getMessage());
+    }
+  }
+
+  @Test
+  public void testInvalidGroupId() {
+    try {
+      identityService.newGroup("john's group");
+      fail("Invalid group id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("Group" + INVALID_ID_MESSAGE + "john's group.", ex.getMessage());
+    }
+  }
+
+  @Test
+  public void testInvalidGroupIdOnSave() {
+    try {
+      Group updatedGroup = identityService.newGroup("group");
+      updatedGroup.setId("john's group");
+      identityService.saveGroup(updatedGroup);
+
+      fail("Invalid group id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("Group" + INVALID_ID_MESSAGE + "john's group.", ex.getMessage());
+    }
+  }
+
+  @Test
+  public void testCamundaAdminId() {
+    String camundaAdminID = "camunda-admin";
+    try {
+      identityService.newUser(camundaAdminID);
+      identityService.newGroup(camundaAdminID);
+      identityService.newTenant(camundaAdminID);
+    } catch (ProcessEngineException ex) {
+      fail(camundaAdminID + " should be a valid id.");
+    }
+  }
+
+  @Test
+  public void testCustomResourceWhitelist() {
+    processEngine = ProcessEngineConfiguration
+      .createProcessEngineConfigurationFromResource("org/camunda/bpm/engine/test/api/identity/custom.whitelist.camunda.cfg.xml")
+      .buildProcessEngine();
+
+    try {
+      processEngine.getIdentityService().newUser("johnDoe");
+      fail("Invalid user id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("User" + INVALID_ID_MESSAGE + "johnDoe.", ex.getMessage());
+    }
+
+    try {
+      processEngine.getIdentityService().newGroup("johnsGroup");
+      fail("Invalid group id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("Group" + INVALID_ID_MESSAGE + "johnsGroup.", ex.getMessage());
+    }
+
+    try {
+      processEngine.getIdentityService().newTenant("johnsTenant");
+      fail("Invalid tenant id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("Tenant" + INVALID_ID_MESSAGE + "johnsTenant.", ex.getMessage());
+    }
+
+    for (Group group : processEngine.getIdentityService().createGroupQuery().list()) {
+      processEngine.getIdentityService().deleteGroup(group.getId());
+    }
+    for (User user : processEngine.getIdentityService().createUserQuery().list()) {
+      processEngine.getIdentityService().deleteUser(user.getId());
+    }
+    for (Authorization authorization : processEngine.getAuthorizationService().createAuthorizationQuery().list()) {
+      processEngine.getAuthorizationService().deleteAuthorization(authorization.getId());
+    }
+  }
+
+  @Test
+  public void testSeparateResourceWhitelistPatterns() {
+    processEngine = ProcessEngineConfiguration
+      .createProcessEngineConfigurationFromResource("org/camunda/bpm/engine/test/api/identity/custom.resource.whitelist.camunda.cfg.xml")
+      .buildProcessEngine();
+
+    // pattern: [a-zA-Z]+
+    try {
+      processEngine.getIdentityService().newUser("12345");
+      fail("Invalid user id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("User" + INVALID_ID_MESSAGE + "12345.", ex.getMessage());
+    }
+
+    // pattern: \d+
+    try {
+      processEngine.getIdentityService().newGroup("johnsGroup");
+      fail("Invalid group id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("Group" + INVALID_ID_MESSAGE + "johnsGroup.", ex.getMessage());
+    }
+
+    // new general pattern (used for tenant whitelisting): [a-zA-Z0-9]+
+    try {
+      processEngine.getIdentityService().newTenant("!@##$%");
+      fail("Invalid tenant id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals("Tenant" + INVALID_ID_MESSAGE + "!@##$%.", ex.getMessage());
+    }
+
+    for (Group group : processEngine.getIdentityService().createGroupQuery().list()) {
+      processEngine.getIdentityService().deleteGroup(group.getId());
+    }
+    for (User user : processEngine.getIdentityService().createUserQuery().list()) {
+      processEngine.getIdentityService().deleteUser(user.getId());
+    }
+    for (Authorization authorization : processEngine.getAuthorizationService().createAuthorizationQuery().list()) {
+      processEngine.getAuthorizationService().deleteAuthorization(authorization.getId());
+    }
   }
 
   private Object createStringSet(String... strings) {
