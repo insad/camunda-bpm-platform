@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.camunda.bpm.engine.ProcessEngineConfiguration;
 import org.camunda.bpm.engine.ProcessEngineException;
 import org.camunda.bpm.engine.authorization.Authorization;
 import org.camunda.bpm.engine.exception.NotValidException;
@@ -337,6 +338,37 @@ public final class EnsureUtil {
     }
   }
 
+  public static void ensureWhitelistedResourceId(CommandContext commandContext, String resourceType, String resourceId) {
+    String resourcePattern = determineResourceWhitelistPattern(commandContext.getProcessEngineConfiguration(), resourceType);
+    Pattern PATTERN = Pattern.compile(resourcePattern);
+
+    if (!PATTERN.matcher(resourceId).matches()) {
+      throw generateException(ProcessEngineException.class, resourceType + " has an invalid id", "'" + resourceId + "'", "is not a valid resource identifier.");
+    }
+  }
+
+  protected static String determineResourceWhitelistPattern(ProcessEngineConfiguration processEngineConfiguration, String resourceType) {
+    String resourcePattern = null;
+
+    if (resourceType.equals("User")) {
+      resourcePattern = processEngineConfiguration.getUserResourceWhitelistPattern();
+    }
+
+    if (resourceType.equals("Group")) {
+      resourcePattern =  processEngineConfiguration.getGroupResourceWhitelistPattern();
+    }
+
+    if (resourceType.equals("Tenant")) {
+      resourcePattern =  processEngineConfiguration.getTenantResourceWhitelistPattern();
+    }
+
+    if (resourcePattern != null && !resourcePattern.isEmpty()) {
+      return resourcePattern;
+    }
+
+    return processEngineConfiguration.getGeneralResourceWhitelistPattern();
+  }
+
   protected static <T extends ProcessEngineException> T generateException(Class<T> exceptionClass, String message, String variableName, String description) {
     String formattedMessage = formatMessage(message, variableName, description);
 
@@ -368,15 +400,6 @@ public final class EnsureUtil {
   public static void ensureActiveCommandContext(String operation) {
     if(Context.getCommandContext() == null) {
       throw LOG.notInsideCommandContext(operation);
-    }
-  }
-
-  public static void ensureValidResourceId(CommandContext commandContext, String resourceType, String resourceId) {
-    String resourcePattern = commandContext.getProcessEngineConfiguration().getResourceWhitelistPattern(resourceType.toLowerCase());
-    Pattern PATTERN = Pattern.compile(resourcePattern);
-
-    if (!PATTERN.matcher(resourceId).matches()) {
-      throw new ProcessEngineException(resourceType + " has an invalid id: id cannot be " + resourceId + ".");
     }
   }
 }

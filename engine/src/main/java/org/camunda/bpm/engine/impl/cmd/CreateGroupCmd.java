@@ -19,7 +19,7 @@ import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
-import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureValidResourceId;
+import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureWhitelistedResourceId;
 
 /**
  * @author Tom Baeyens
@@ -36,7 +36,7 @@ public class CreateGroupCmd extends AbstractWritableIdentityServiceCmd<Group> im
   }
   
   protected Group executeCmd(CommandContext commandContext) {
-    ensureValidResourceId(commandContext, "Group", groupId);
+    ensureWhitelistedResourceId(commandContext, "Group", groupId);
 
     return commandContext
       .getWritableIdentityProvider()

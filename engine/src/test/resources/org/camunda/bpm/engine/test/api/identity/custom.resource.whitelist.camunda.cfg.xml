@@ -35,13 +35,10 @@
 
     <property name="jdbcBatchProcessing" value="${jdbcBatchProcessing}"/>
 
-    <property name="resourceWhitelistPatterns">
-      <map>
-        <entry key="general" value="[a-zA-Z0-9]+" />
-        <entry key="user" value="[a-zA-Z]+" />
-        <entry key="group" value="\d+" />
-      </map>
-    </property>
+    <!-- resource id whitelist patterns -->
+    <property name="generalResourceWhitelistPattern" value="[a-zA-Z0-9]+" />
+    <property name="userResourceWhitelistPattern" value="[a-zA-Z]+" />
+    <property name="groupResourceWhitelistPattern" value="\d+" />
 
     <!--<property name="idGenerator" ref="uuidGenerator" />-->
 

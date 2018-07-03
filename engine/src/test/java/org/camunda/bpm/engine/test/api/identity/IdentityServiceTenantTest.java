@@ -50,7 +50,7 @@ public class IdentityServiceTenantTest {
   protected static final String TENANT_ONE = "tenant1";
   protected static final String TENANT_TWO = "tenant2";
 
-  protected static final String INVALID_ID_MESSAGE = "Tenant has an invalid id: id cannot be ";
+  private final String INVALID_ID_MESSAGE = "%s has an invalid id: '%s' is not a valid resource identifier.";
 
   @Rule
   public ProcessEngineRule engineRule = new ProvidedProcessEngineRule();
@@ -78,6 +78,13 @@ public class IdentityServiceTenantTest {
     identityService.deleteUser(USER_TWO);
 
     if (processEngine != null) {
+      for (Tenant deleteTenant : processEngine.getIdentityService().createTenantQuery().list()) {
+        processEngine.getIdentityService().deleteTenant(deleteTenant.getId());
+      }
+      for (Authorization authorization : processEngine.getAuthorizationService().createAuthorizationQuery().list()) {
+        processEngine.getAuthorizationService().deleteAuthorization(authorization.getId());
+      }
+
       processEngine.close();
       ProcessEngines.unregister(processEngine);
     }
@@ -115,24 +122,47 @@ public class IdentityServiceTenantTest {
 
   @Test
   public void testInvalidTenantId() {
+    String invalidId = "john's tenant";
     try {
-      identityService.newTenant("john's tenant");
+      identityService.newTenant(invalidId);
       fail("Invalid tenant id exception expected!");
     } catch (ProcessEngineException ex) {
-      assertEquals(INVALID_ID_MESSAGE + "john's tenant.", ex.getMessage());
+      assertEquals(String.format(INVALID_ID_MESSAGE, "Tenant", invalidId), ex.getMessage());
     }
   }
 
   @Test
   public void testInvalidTenantIdOnUpdate() {
+    String invalidId = "john's tenant";
     try {
       Tenant updatedTenant = identityService.newTenant("john");
-      updatedTenant.setId("john's tenant");
+      updatedTenant.setId(invalidId);
       identityService.saveTenant(updatedTenant);
 
       fail("Invalid tenant id exception expected!");
     } catch (ProcessEngineException ex) {
-      assertEquals(INVALID_ID_MESSAGE + "john's tenant.", ex.getMessage());
+      assertEquals(String.format(INVALID_ID_MESSAGE, "Tenant", invalidId), ex.getMessage());
+    }
+  }
+
+  @Test
+  public void testCustomTenantWhitelistPattern() {
+    processEngine = ProcessEngineConfiguration
+      .createProcessEngineConfigurationFromResource("org/camunda/bpm/engine/test/api/identity/generic.resource.id.whitelist.camunda.cfg.xml")
+      .buildProcessEngine();
+    processEngine.getProcessEngineConfiguration().setTenantResourceWhitelistPattern("[a-zA-Z]+");
+
+    String invalidId1 = "john's tenant";
+    String invalidId2 = "john!@#$%";
+
+    try {
+      Tenant tenant = processEngine.getIdentityService().newTenant(invalidId1);
+      tenant.setId(invalidId2);
+      processEngine.getIdentityService().saveTenant(tenant);
+
+      fail("Invalid tenant id exception expected!");
+    } catch (ProcessEngineException ex) {
+      assertEquals(String.format(INVALID_ID_MESSAGE, "Tenant", invalidId1), ex.getMessage());
     }
   }
 
@@ -184,13 +214,6 @@ public class IdentityServiceTenantTest {
     thrown.expectMessage("has an invalid id: id cannot be *. * is a reserved identifier.");
 
     processEngine.getIdentityService().saveTenant(tenant);
-
-    for (Tenant deleteTenant : processEngine.getIdentityService().createTenantQuery().list()) {
-      processEngine.getIdentityService().deleteTenant(deleteTenant.getId());
-    }
-    for (Authorization authorization : processEngine.getAuthorizationService().createAuthorizationQuery().list()) {
-      processEngine.getAuthorizationService().deleteAuthorization(authorization.getId());
-    }
   }
 
   @Test

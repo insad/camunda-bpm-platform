@@ -19,7 +19,7 @@ import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
-import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureValidResourceId;
+import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureWhitelistedResourceId;
 
 /**
  * @author Tom Baeyens
@@ -36,7 +36,7 @@ public class CreateUserCmd extends AbstractWritableIdentityServiceCmd<User> impl
   }
   
   protected User executeCmd(CommandContext commandContext) {
-    ensureValidResourceId(commandContext, "User", userId);
+    ensureWhitelistedResourceId(commandContext, "User", userId);
 
     return commandContext
       .getWritableIdentityProvider()
