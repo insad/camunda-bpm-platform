@@ -43,6 +43,7 @@ import org.camunda.bpm.engine.ProcessEngines;
 import org.camunda.bpm.engine.authorization.Authorization;
 import org.camunda.bpm.engine.identity.Group;
 import org.camunda.bpm.engine.identity.Picture;
+import org.camunda.bpm.engine.identity.Tenant;
 import org.camunda.bpm.engine.identity.User;
 import org.camunda.bpm.engine.impl.identity.Account;
 import org.camunda.bpm.engine.impl.identity.Authentication;
@@ -96,12 +97,16 @@ public class IdentityServiceTest {
       for (Group group : processEngine.getIdentityService().createGroupQuery().list()) {
         processEngine.getIdentityService().deleteGroup(group.getId());
       }
+      for (Tenant tenant : processEngine.getIdentityService().createTenantQuery().list()) {
+        processEngine.getIdentityService().deleteTenant(tenant.getId());
+      }
       for (Authorization authorization : processEngine.getAuthorizationService().createAuthorizationQuery().list()) {
         processEngine.getAuthorizationService().deleteAuthorization(authorization.getId());
       }
 
       processEngine.close();
       ProcessEngines.unregister(processEngine);
+      processEngine = null;
     }
   }
 

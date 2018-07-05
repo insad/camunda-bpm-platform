@@ -87,6 +87,7 @@ public class IdentityServiceTenantTest {
 
       processEngine.close();
       ProcessEngines.unregister(processEngine);
+      processEngine = null;
     }
   }
 
