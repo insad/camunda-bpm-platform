@@ -219,6 +219,13 @@
     <if test="authCheck.isAuthorizationCheckEnabled &amp;&amp; !authCheck.revokeAuthorizationCheckEnabled &amp;&amp; authCheck.authUserId != null">
       <include refid="org.camunda.bpm.engine.impl.persistence.entity.AuthorizationEntity.authCheckJoinWithoutOnClause" />
       AUTH ON (AUTH.RESOURCE_ID_ in (RES.ID_, RES.KEY_, '*'))
+
+      <if test="startablePermissionCheck">
+        <bind name="atomicChecks" value="processDefinitionCreatePermissionChecks" />
+        <include refid="org.camunda.bpm.engine.impl.persistence.entity.AuthorizationEntity.authCheckJoinWithoutOnClauseWithBinding" />
+        AUTH1 ON (AUTH1.RESOURCE_ID_ in (RES.KEY_, '*'))
+      </if>
+
     </if>
     <where>
       <if test="id != null">
@@ -326,9 +333,35 @@
       </if>
 
       <include refid="org.camunda.bpm.engine.impl.persistence.entity.AuthorizationEntity.queryAuthorizationCheck" />
+      
+      <if test="startablePermissionCheck">
+        <!-- AND RES.ID_ = ${permCheck.perms} -->
+        <bind name="authUserId" value="authCheck.authUserId" />
+        <bind name="authGroupIds" value="authCheck.authGroupIds" />
+        <bind name="revokeAuthorizationCheckEnabled" value="authCheck.revokeAuthorizationCheckEnabled" />
+        <bind name="permCheck" value="processDefinitionCreatePermissionChecks[0]" />
+        AND ${dbSpecificIfNullFunction}((<include refid="org.camunda.bpm.engine.impl.persistence.entity.AuthorizationEntity.authCheck"/>) , 0) = 1
+        <!-- <include refid="processDefinitionCreateAuthorizationCheck" /> -->
+      </if>
+<!--       <if test="authCheck.isAuthorizationCheckEnabled &amp;&amp; !authCheck.revokeAuthorizationCheckEnabled &amp;&amp; authCheck.authUserId != null &amp;&amp; startablePermissionCheck">
+      and AUTH1.RESOURCE_ID_ IS NOT NULL
+      </if> -->
       <include refid="org.camunda.bpm.engine.impl.persistence.entity.TenantEntity.queryTenantCheck" />
 
     </where>
+  </sql>
+  
+  <sql id="processDefinitionCreateAuthorizationCheck">
+    <if test="authCheck.isAuthorizationCheckEnabled &amp;&amp; authCheck.authUserId != null">
+      <choose>
+        <when test="authCheck.revokeAuthorizationCheckEnabled">
+          and (<include refid="org.camunda.bpm.engine.impl.persistence.entity.AuthorizationEntity.authCheck" />) = 1
+        </when>
+        <otherwise>
+          AND AUTH1.RESOURCE_ID_ IS NOT NULL
+        </otherwise>
+      </choose>
+    </if>
   </sql>
 
   <select id="selectProcessDefinitionByDeploymentAndKey" parameterType="map" resultMap="processDefinitionResultMap">
