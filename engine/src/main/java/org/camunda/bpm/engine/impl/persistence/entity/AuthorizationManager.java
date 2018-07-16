@@ -517,13 +517,28 @@ public class AuthorizationManager extends AbstractManager {
   public void configureProcessDefinitionQuery(ProcessDefinitionQueryImpl query) {
     configureQuery(query, PROCESS_DEFINITION, "RES.KEY_");
 
-    if (query.getAuthCheck().isAuthorizationCheckEnabled() && query.isStartablePermissionCheck()) {
-      PermissionCheck permCheck = newPermissionCheck();
-      permCheck.setResource(PROCESS_DEFINITION);
-      permCheck.setResourceIdQueryParam("RES.KEY_");
-      permCheck.setPermission(Permissions.CREATE_INSTANCE);
-      query.addProcessDefinitionCreatePermissionCheck(permCheck);
+    if (query.isStartablePermissionCheck()) {
+      AuthorizationCheck authorizationCheck = query.getAuthCheck();
+
+      if (!authorizationCheck.isRevokeAuthorizationCheckEnabled()) {
+        PermissionCheck permCheck = newPermissionCheck();
+        permCheck.setResource(PROCESS_DEFINITION);
+        permCheck.setResourceIdQueryParam("RES.KEY_");
+        permCheck.setPermission(Permissions.CREATE_INSTANCE);
+        query.addProcessDefinitionCreatePermissionCheck(permCheck);
+
+      }
+      else {
+        CompositePermissionCheck permissionCheck = new PermissionCheckBuilder()
+            .conjunctive()
+            .atomicCheck(PROCESS_DEFINITION, "RES.KEY_", READ)
+            .atomicCheck(PROCESS_DEFINITION, "RES.KEY_", Permissions.CREATE_INSTANCE)
+            .build();
+        addPermissionCheck(authorizationCheck, permissionCheck);
+      }
+
     }
+
   }
 
   // execution/process instance query ////////////////////////
