@@ -527,8 +527,7 @@ public class AuthorizationManager extends AbstractManager {
         permCheck.setPermission(Permissions.CREATE_INSTANCE);
         query.addProcessDefinitionCreatePermissionCheck(permCheck);
 
-      }
-      else {
+      } else {
         CompositePermissionCheck permissionCheck = new PermissionCheckBuilder()
             .conjunctive()
             .atomicCheck(PROCESS_DEFINITION, "RES.KEY_", READ)
