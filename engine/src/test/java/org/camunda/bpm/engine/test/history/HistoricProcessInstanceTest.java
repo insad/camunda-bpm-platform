@@ -993,6 +993,27 @@ public class HistoricProcessInstanceTest extends PluggableProcessEngineTestCase 
   }
 
   @Deployment(resources = {
+    "org/camunda/bpm/engine/test/api/runtime/nestedSubProcess.bpmn20.xml",
+    "org/camunda/bpm/engine/test/api/runtime/subProcess.bpmn20.xml"
+  })
+  public void testRootProcessInstanceIdProperty() {
+    String rootProcessInstanceId = runtimeService.startProcessInstanceByKey("nestedSimpleSubProcess").getId();
+
+    HistoricProcessInstance historicParentProcessInstance = historyService.createHistoricProcessInstanceQuery()
+      .processInstanceId(rootProcessInstanceId)
+      .singleResult();
+
+    HistoricProcessInstance historicChildProcessInstance = historyService.createHistoricProcessInstanceQuery()
+      .superProcessInstanceId(rootProcessInstanceId)
+      .singleResult();
+
+    assertNull(historicParentProcessInstance.getRootProcessInstanceId());
+
+    assertNotNull(historicChildProcessInstance.getRootProcessInstanceId());
+    assertEquals(rootProcessInstanceId, historicChildProcessInstance.getRootProcessInstanceId());
+  }
+
+  @Deployment(resources = {
       "org/camunda/bpm/engine/test/api/cmmn/oneProcessTaskCase.cmmn",
       "org/camunda/bpm/engine/test/api/runtime/oneTaskProcess.bpmn20.xml"
   })

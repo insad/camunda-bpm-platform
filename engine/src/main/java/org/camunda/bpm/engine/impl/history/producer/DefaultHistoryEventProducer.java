@@ -466,6 +466,9 @@ public class DefaultHistoryEventProducer implements HistoryEventProducer {
     ExecutionEntity superExecution = executionEntity.getSuperExecution();
     if (superExecution != null) {
       evt.setSuperProcessInstanceId(superExecution.getProcessInstanceId());
+
+      // TODO: Get Root PID from parent and set it
+      //evt.setRootProcessInstanceId();
     }
 
     //state
