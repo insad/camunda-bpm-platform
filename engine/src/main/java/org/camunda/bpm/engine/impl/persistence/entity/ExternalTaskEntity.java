@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +38,7 @@ import org.camunda.bpm.engine.impl.pvm.delegate.ActivityExecution;
 import org.camunda.bpm.engine.impl.util.ClockUtil;
 import org.camunda.bpm.engine.impl.util.EnsureUtil;
 import org.camunda.bpm.engine.impl.util.ExceptionUtil;
+import org.camunda.bpm.engine.repository.ResourceTypes;
 import org.camunda.bpm.engine.runtime.Incident;
 
 import static org.camunda.bpm.engine.impl.util.ExceptionUtil.createExceptionByteArray;
@@ -277,7 +281,7 @@ public class ExternalTaskEntity implements ExternalTask, DbEntity, HasDbRevision
     ByteArrayEntity byteArray = getErrorByteArray();
 
     if(byteArray == null) {
-      byteArray = createExceptionByteArray(EXCEPTION_NAME,exceptionBytes);
+      byteArray = createExceptionByteArray(EXCEPTION_NAME,exceptionBytes, ResourceTypes.RUNTIME);
       errorDetailsByteArrayId = byteArray.getId();
       errorDetailsByteArray = byteArray;
     }
@@ -365,12 +369,20 @@ public class ExternalTaskEntity implements ExternalTask, DbEntity, HasDbRevision
     produceHistoricExternalTaskFailedEvent();
   }
 
-  public void bpmnError(String errorCode) {
+  public void bpmnError(String errorCode, String errorMessage, Map<String, Object> variables) {
     ensureActive();
     ActivityExecution activityExecution = getExecution();
-    BpmnError bpmnError = new BpmnError(errorCode);
+    BpmnError bpmnError = null;
+    if (errorMessage != null) {
+      bpmnError = new BpmnError(errorCode, errorMessage);
+    } else {
+      bpmnError = new BpmnError(errorCode);
+    }
     try {
       ExternalTaskActivityBehavior behavior = ((ExternalTaskActivityBehavior) activityExecution.getActivity().getActivityBehavior());
+      if (variables != null && !variables.isEmpty()) {
+        activityExecution.setVariables(variables);
+      }
       behavior.propagateBpmnError(bpmnError, activityExecution);
     } catch (Exception ex) {
       throw ProcessEngineLogger.CMD_LOGGER.exceptionBpmnErrorPropagationFailed(errorCode, ex);

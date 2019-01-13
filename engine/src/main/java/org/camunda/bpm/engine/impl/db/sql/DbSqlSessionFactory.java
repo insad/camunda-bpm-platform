@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -10,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.camunda.bpm.engine.impl.db.sql;
 
 import java.util.Arrays;
@@ -125,6 +127,7 @@ public class DbSqlSessionFactory implements SessionFactory {
     constants.put("constant.datepart.minute", "MINUTE");
     constants.put("constant.null.startTime", "null START_TIME_");
     constants.put("constant.varchar.cast", "'${key}'");
+    constants.put("constant.null.reporter", "NULL AS REPORTER_");
     dbSpecificConstants.put(H2, constants);
 
     // mysql specific
@@ -183,6 +186,16 @@ public class DbSqlSessionFactory implements SessionFactory {
 
       addDatabaseSpecificStatement(mysqlLikeDatabase, "deleteHistoricIncidentsByBatchIds", "deleteHistoricIncidentsByBatchIds_mysql");
 
+      // related to CAM-9505
+      addDatabaseSpecificStatement(mysqlLikeDatabase, "updateIncident", "updateIncident_mysql");
+      addDatabaseSpecificStatement(mysqlLikeDatabase, "updateTaskSuspensionStateByParameters", "updateTaskSuspensionStateByParameters_mysql");
+      addDatabaseSpecificStatement(mysqlLikeDatabase, "updateJobLogByBatchId", "updateJobLogByBatchId_mysql");
+      addDatabaseSpecificStatement(mysqlLikeDatabase, "updateJobLogByRootProcessInstanceId", "updateJobLogByRootProcessInstanceId_mysql");
+      addDatabaseSpecificStatement(mysqlLikeDatabase, "updateUserOperationLogByRootProcessInstanceId", "updateUserOperationLogByRootProcessInstanceId_mysql");
+      addDatabaseSpecificStatement(mysqlLikeDatabase, "updateExternalTaskLogByRootProcessInstanceId", "updateExternalTaskLogByRootProcessInstanceId_mysql");
+      addDatabaseSpecificStatement(mysqlLikeDatabase, "updateHistoricIncidentsByRootProcessInstanceId", "updateHistoricIncidentsByRootProcessInstanceId_mysql");
+      addDatabaseSpecificStatement(mysqlLikeDatabase, "updateIdentityLinkLogByRootProcessInstanceId", "updateIdentityLinkLogByRootProcessInstanceId_mysql");
+
       constants = new HashMap<String, String>();
       constants.put("constant.event", "'event'");
       constants.put("constant.op_message", "CONCAT(NEW_VALUE_, '_|_', PROPERTY_)");
@@ -192,6 +205,7 @@ public class DbSqlSessionFactory implements SessionFactory {
       constants.put("constant.datepart.minute", "MINUTE");
       constants.put("constant.null.startTime", "null START_TIME_");
       constants.put("constant.varchar.cast", "'${key}'");
+      constants.put("constant.null.reporter", "NULL AS REPORTER_");
       dbSpecificConstants.put(mysqlLikeDatabase, constants);
     }
 
@@ -228,6 +242,7 @@ public class DbSqlSessionFactory implements SessionFactory {
     addDatabaseSpecificStatement(POSTGRES, "insertByteArray", "insertByteArray_postgres");
     addDatabaseSpecificStatement(POSTGRES, "updateByteArray", "updateByteArray_postgres");
     addDatabaseSpecificStatement(POSTGRES, "selectByteArray", "selectByteArray_postgres");
+    addDatabaseSpecificStatement(POSTGRES, "selectByteArrays", "selectByteArrays_postgres");
     addDatabaseSpecificStatement(POSTGRES, "selectResourceByDeploymentIdAndResourceName", "selectResourceByDeploymentIdAndResourceName_postgres");
     addDatabaseSpecificStatement(POSTGRES, "selectResourceByDeploymentIdAndResourceNames", "selectResourceByDeploymentIdAndResourceNames_postgres");
     addDatabaseSpecificStatement(POSTGRES, "selectResourceByDeploymentIdAndResourceId", "selectResourceByDeploymentIdAndResourceId_postgres");
@@ -248,6 +263,24 @@ public class DbSqlSessionFactory implements SessionFactory {
     addDatabaseSpecificStatement(POSTGRES, "selectFilterByQueryCriteria", "selectFilterByQueryCriteria_postgres");
     addDatabaseSpecificStatement(POSTGRES, "selectFilter", "selectFilter_postgres");
 
+    addDatabaseSpecificStatement(POSTGRES, "deleteAttachmentsByRemovalTime", "deleteAttachmentsByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteCommentsByRemovalTime", "deleteCommentsByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricActivityInstancesByRemovalTime", "deleteHistoricActivityInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricDecisionInputInstancesByRemovalTime", "deleteHistoricDecisionInputInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricDecisionInstancesByRemovalTime", "deleteHistoricDecisionInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricDecisionOutputInstancesByRemovalTime", "deleteHistoricDecisionOutputInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricDetailsByRemovalTime", "deleteHistoricDetailsByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteExternalTaskLogByRemovalTime", "deleteExternalTaskLogByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricIdentityLinkLogByRemovalTime", "deleteHistoricIdentityLinkLogByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricIncidentsByRemovalTime", "deleteHistoricIncidentsByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteJobLogByRemovalTime", "deleteJobLogByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricProcessInstancesByRemovalTime", "deleteHistoricProcessInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricTaskInstancesByRemovalTime", "deleteHistoricTaskInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricVariableInstancesByRemovalTime", "deleteHistoricVariableInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteUserOperationLogByRemovalTime", "deleteUserOperationLogByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteByteArraysByRemovalTime", "deleteByteArraysByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(POSTGRES, "deleteHistoricBatchesByRemovalTime", "deleteHistoricBatchesByRemovalTime_postgres_or_db2");
+
     constants = new HashMap<String, String>();
     constants.put("constant.event", "'event'");
     constants.put("constant.op_message", "NEW_VALUE_ || '_|_' || PROPERTY_");
@@ -257,6 +290,7 @@ public class DbSqlSessionFactory implements SessionFactory {
     constants.put("constant.datepart.minute", "MINUTE");
     constants.put("constant.null.startTime", "null START_TIME_");
     constants.put("constant.varchar.cast", "cast('${key}' as varchar(64))");
+    constants.put("constant.null.reporter", "CAST(NULL AS VARCHAR) AS REPORTER_");
     dbSpecificConstants.put(POSTGRES, constants);
 
     // oracle
@@ -298,6 +332,24 @@ public class DbSqlSessionFactory implements SessionFactory {
     addDatabaseSpecificStatement(ORACLE, "selectHistoricCaseInstanceIdsForCleanup", "selectHistoricCaseInstanceIdsForCleanup_oracle");
     addDatabaseSpecificStatement(ORACLE, "selectHistoricBatchIdsForCleanup", "selectHistoricBatchIdsForCleanup_oracle");
 
+    addDatabaseSpecificStatement(ORACLE, "deleteAttachmentsByRemovalTime", "deleteAttachmentsByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteCommentsByRemovalTime", "deleteCommentsByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricActivityInstancesByRemovalTime", "deleteHistoricActivityInstancesByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricDecisionInputInstancesByRemovalTime", "deleteHistoricDecisionInputInstancesByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricDecisionInstancesByRemovalTime", "deleteHistoricDecisionInstancesByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricDecisionOutputInstancesByRemovalTime", "deleteHistoricDecisionOutputInstancesByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricDetailsByRemovalTime", "deleteHistoricDetailsByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteExternalTaskLogByRemovalTime", "deleteExternalTaskLogByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricIdentityLinkLogByRemovalTime", "deleteHistoricIdentityLinkLogByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricIncidentsByRemovalTime", "deleteHistoricIncidentsByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteJobLogByRemovalTime", "deleteJobLogByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricProcessInstancesByRemovalTime", "deleteHistoricProcessInstancesByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricTaskInstancesByRemovalTime", "deleteHistoricTaskInstancesByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricVariableInstancesByRemovalTime", "deleteHistoricVariableInstancesByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteUserOperationLogByRemovalTime", "deleteUserOperationLogByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteByteArraysByRemovalTime", "deleteByteArraysByRemovalTime_oracle");
+    addDatabaseSpecificStatement(ORACLE, "deleteHistoricBatchesByRemovalTime", "deleteHistoricBatchesByRemovalTime_oracle");
+
     constants = new HashMap<String, String>();
     constants.put("constant.event", "cast('event' as nvarchar2(255))");
     constants.put("constant.op_message", "NEW_VALUE_ || '_|_' || PROPERTY_");
@@ -307,6 +359,7 @@ public class DbSqlSessionFactory implements SessionFactory {
     constants.put("constant.datepart.minute", "'MI'");
     constants.put("constant.null.startTime", "null START_TIME_");
     constants.put("constant.varchar.cast", "'${key}'");
+    constants.put("constant.null.reporter", "NULL AS REPORTER_");
     dbSpecificConstants.put(ORACLE, constants);
 
     // db2
@@ -352,6 +405,24 @@ public class DbSqlSessionFactory implements SessionFactory {
     addDatabaseSpecificStatement(DB2, "selectHistoricDecisionInstancesByNativeQuery", "selectHistoricDecisionInstancesByNativeQuery_mssql_or_db2");
     addDatabaseSpecificStatement(DB2, "selectFilterByQueryCriteria", "selectFilterByQueryCriteria_oracleDb2");
 
+    addDatabaseSpecificStatement(DB2, "deleteAttachmentsByRemovalTime", "deleteAttachmentsByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteCommentsByRemovalTime", "deleteCommentsByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricActivityInstancesByRemovalTime", "deleteHistoricActivityInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricDecisionInputInstancesByRemovalTime", "deleteHistoricDecisionInputInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricDecisionInstancesByRemovalTime", "deleteHistoricDecisionInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricDecisionOutputInstancesByRemovalTime", "deleteHistoricDecisionOutputInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricDetailsByRemovalTime", "deleteHistoricDetailsByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteExternalTaskLogByRemovalTime", "deleteExternalTaskLogByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricIdentityLinkLogByRemovalTime", "deleteHistoricIdentityLinkLogByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricIncidentsByRemovalTime", "deleteHistoricIncidentsByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteJobLogByRemovalTime", "deleteJobLogByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricProcessInstancesByRemovalTime", "deleteHistoricProcessInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricTaskInstancesByRemovalTime", "deleteHistoricTaskInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricVariableInstancesByRemovalTime", "deleteHistoricVariableInstancesByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteUserOperationLogByRemovalTime", "deleteUserOperationLogByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteByteArraysByRemovalTime", "deleteByteArraysByRemovalTime_postgres_or_db2");
+    addDatabaseSpecificStatement(DB2, "deleteHistoricBatchesByRemovalTime", "deleteHistoricBatchesByRemovalTime_postgres_or_db2");
+
     constants = new HashMap<String, String>();
     constants.put("constant.event", "'event'");
     constants.put("constant.op_message", "CAST(CONCAT(CONCAT(COALESCE(NEW_VALUE_,''), '_|_'), COALESCE(PROPERTY_,'')) as varchar(255))");
@@ -361,6 +432,7 @@ public class DbSqlSessionFactory implements SessionFactory {
     constants.put("constant.datepart.minute", "MINUTE");
     constants.put("constant.null.startTime", "CAST(NULL as timestamp) as START_TIME_");
     constants.put("constant.varchar.cast", "cast('${key}' as varchar(64))");
+    constants.put("constant.null.reporter", "CAST(NULL AS VARCHAR(255)) AS REPORTER_");
     dbSpecificConstants.put(DB2, constants);
 
     // mssql
@@ -418,6 +490,7 @@ public class DbSqlSessionFactory implements SessionFactory {
     constants.put("constant.datepart.minute", "MINUTE");
     constants.put("constant.null.startTime", "CAST(NULL AS datetime2) AS START_TIME_");
     constants.put("constant.varchar.cast", "'${key}'");
+    constants.put("constant.null.reporter", "NULL AS REPORTER_");
     dbSpecificConstants.put(MSSQL, constants);
   }
 

@@ -1,11 +1,11 @@
 /*
- * Copyright 2016 camunda services GmbH.
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,7 +27,6 @@ import org.camunda.bpm.engine.test.util.ProvidedProcessEngineRule;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.RuleChain;
@@ -68,7 +67,7 @@ public abstract class AbstractMetricsIntervalTest {
   protected MetricsRegistry metricsRegistry;
   protected Random rand;
 
-  private void generateMeterData(long dataCount, long interval) {
+  protected void generateMeterData(long dataCount, long interval) {
     //set up for randomnes
     Set<String> metricNames = metricsRegistry.getMeters().keySet();
     metricsCount = metricNames.size();

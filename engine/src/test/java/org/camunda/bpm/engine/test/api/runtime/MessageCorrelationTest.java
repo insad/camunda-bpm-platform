@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -10,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.camunda.bpm.engine.test.api.runtime;
 
 import java.io.ByteArrayInputStream;
@@ -47,11 +49,13 @@ import org.camunda.bpm.engine.test.api.variables.FailingJavaSerializable;
 import org.camunda.bpm.engine.test.util.ProcessEngineBootstrapRule;
 import org.camunda.bpm.engine.test.util.ProcessEngineTestRule;
 import org.camunda.bpm.engine.test.util.ProvidedProcessEngineRule;
+import org.camunda.bpm.engine.variable.VariableMap;
 import org.camunda.bpm.engine.variable.Variables;
 import org.camunda.bpm.engine.variable.Variables.SerializationDataFormats;
 import org.camunda.bpm.engine.variable.value.ObjectValue;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -1683,6 +1687,51 @@ public class MessageCorrelationTest {
         .variableName(localVarName)
         .singleResult();
     assertNull(variableNonExisting);
+  }
+
+  @Deployment(resources = { "org/camunda/bpm/engine/test/api/runtime/MessageCorrelationTest.waitForMessageProcess.bpmn20.xml",
+  "org/camunda/bpm/engine/test/api/runtime/MessageCorrelationTest.sendMessageProcess.bpmn20.xml" })
+  @Test
+  public void testCorrelateWithResultTwoTimesInSameTransaction() {
+    // start process that waits for message
+    Map<String, Object> variables = new HashMap<String, Object>();
+    variables.put("correlationKey", "someCorrelationKey");
+    ProcessInstance messageWaitProcess = runtimeService.startProcessInstanceByKey("waitForMessageProcess", variables);
+
+    Execution waitingProcess = runtimeService.createExecutionQuery().executionId(messageWaitProcess.getProcessInstanceId()).singleResult();
+    Assert.assertNotNull(waitingProcess);
+
+    thrown.expect(MismatchingMessageCorrelationException.class);
+    thrown.expectMessage("Cannot correlate message 'waitForCorrelationKeyMessage'");
+
+    // start process that sends two messages with the same correlationKey
+    VariableMap switchScenarioFlag = Variables.createVariables().putValue("allFlag", false);
+    runtimeService.startProcessInstanceByKey("sendMessageProcess", switchScenarioFlag);
+
+    // waiting process must be finished
+    waitingProcess = runtimeService.createExecutionQuery().executionId(messageWaitProcess.getProcessInstanceId()).singleResult();
+    Assert.assertNull(waitingProcess);
+  }
+
+  @Deployment(resources = { "org/camunda/bpm/engine/test/api/runtime/MessageCorrelationTest.waitForMessageProcess.bpmn20.xml",
+      "org/camunda/bpm/engine/test/api/runtime/MessageCorrelationTest.sendMessageProcess.bpmn20.xml" })
+  @Test
+  public void testCorrelateAllWithResultTwoTimesInSameTransaction() {
+    // start process that waits for message
+    Map<String, Object> variables = new HashMap<String, Object>();
+    variables.put("correlationKey", "someCorrelationKey");
+    ProcessInstance messageWaitProcess = runtimeService.startProcessInstanceByKey("waitForMessageProcess", variables);
+
+    Execution waitingProcess = runtimeService.createExecutionQuery().executionId(messageWaitProcess.getProcessInstanceId()).singleResult();
+    Assert.assertNotNull(waitingProcess);
+
+    // start process that sends two messages with the same correlationKey
+    VariableMap switchScenarioFlag = Variables.createVariables().putValue("allFlag", true);
+    runtimeService.startProcessInstanceByKey("sendMessageProcess", switchScenarioFlag);
+
+    // waiting process must be finished
+    waitingProcess = runtimeService.createExecutionQuery().executionId(messageWaitProcess.getProcessInstanceId()).singleResult();
+    Assert.assertNull(waitingProcess);
   }
 
 }

@@ -1,8 +1,24 @@
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.camunda.bpm.engine.runtime;
 
 import java.util.List;
 
 import org.camunda.bpm.engine.AuthorizationException;
+import org.camunda.bpm.engine.authorization.BatchPermissions;
 import org.camunda.bpm.engine.authorization.Permissions;
 import org.camunda.bpm.engine.authorization.Resources;
 import org.camunda.bpm.engine.batch.Batch;
@@ -86,7 +102,7 @@ public interface ModificationBuilder extends InstantiationBuilder<ModificationBu
    * @throws AuthorizationException
    *   if the user has not all of the following permissions
    *   <ul>
-   *     <li>{@link Permissions#CREATE} permission on {@link Resources#BATCH}</li>
+   *     <li>{@link Permissions#CREATE} or {@link BatchPermissions#CREATE_BATCH_MODIFY_PROCESS_INSTANCES} permission on {@link Resources#BATCH}</li>
    *   </ul>
    */
   Batch executeAsync();

@@ -1,12 +1,26 @@
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.camunda.bpm.engine.impl.batch.externaltask;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.camunda.bpm.engine.impl.batch.SetRetriesBatchConfiguration;
 import org.camunda.bpm.engine.impl.json.JsonObjectConverter;
 import org.camunda.bpm.engine.impl.util.JsonUtil;
-import org.camunda.bpm.engine.impl.util.json.JSONObject;
+import com.google.gson.JsonObject;
 
 public class SetExternalTaskRetriesBatchConfigurationJsonConverter extends JsonObjectConverter<SetRetriesBatchConfiguration> {
 
@@ -16,8 +30,8 @@ public class SetExternalTaskRetriesBatchConfigurationJsonConverter extends JsonO
   public static final String RETRIES = "retries";
   
   @Override
-  public JSONObject toJsonObject(SetRetriesBatchConfiguration configuration) {
-    JSONObject json = new JSONObject();
+  public JsonObject toJsonObject(SetRetriesBatchConfiguration configuration) {
+    JsonObject json = JsonUtil.createObject();
     
     JsonUtil.addListField(json, EXTERNAL_TASK_IDS, configuration.getIds());
     JsonUtil.addField(json, RETRIES, configuration.getRetries());
@@ -26,17 +40,12 @@ public class SetExternalTaskRetriesBatchConfigurationJsonConverter extends JsonO
   }
 
   @Override
-  public SetRetriesBatchConfiguration toObject(JSONObject json) {
-    return new SetRetriesBatchConfiguration(readExternalTaskIds(json), json.optInt(RETRIES));
+  public SetRetriesBatchConfiguration toObject(JsonObject json) {
+    return new SetRetriesBatchConfiguration(readExternalTaskIds(json), JsonUtil.getInt(json, RETRIES));
   }
   
-  protected List<String> readExternalTaskIds(JSONObject json) {
-    List<Object> objects = JsonUtil.jsonArrayAsList(json.getJSONArray(EXTERNAL_TASK_IDS));
-    List<String> externalTaskIds = new ArrayList<String>();
-    for (Object object : objects) {
-      externalTaskIds.add(object.toString());
-    }
-    return externalTaskIds;
+  protected List<String> readExternalTaskIds(JsonObject json) {
+    return JsonUtil.asList(JsonUtil.getArray(json, EXTERNAL_TASK_IDS));
   }
 
 }

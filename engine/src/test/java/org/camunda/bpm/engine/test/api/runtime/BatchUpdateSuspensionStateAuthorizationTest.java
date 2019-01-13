@@ -1,4 +1,7 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -13,11 +16,12 @@
 package org.camunda.bpm.engine.test.api.runtime;
 
 import java.util.Collection;
+
+import org.camunda.bpm.engine.authorization.BatchPermissions;
 import org.camunda.bpm.engine.authorization.Permissions;
 import org.camunda.bpm.engine.authorization.Resources;
 import org.camunda.bpm.engine.batch.Batch;
 import org.camunda.bpm.engine.batch.history.HistoricBatch;
-import org.camunda.bpm.engine.repository.ProcessDefinition;
 import org.camunda.bpm.engine.runtime.Job;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.test.ProcessEngineRule;
@@ -36,6 +40,7 @@ import org.junit.runners.Parameterized;
 
 import static org.camunda.bpm.engine.test.api.authorization.util.AuthorizationScenario.scenario;
 import static org.camunda.bpm.engine.test.api.authorization.util.AuthorizationSpec.grant;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 public class BatchUpdateSuspensionStateAuthorizationTest {
@@ -59,7 +64,8 @@ public class BatchUpdateSuspensionStateAuthorizationTest {
       scenario()
         .withoutAuthorizations()
         .failsDueToRequired(
-          grant(Resources.BATCH, "*", "userId", Permissions.CREATE)
+          grant(Resources.BATCH, "*", "userId", Permissions.CREATE),
+          grant(Resources.BATCH, "*", "userId", BatchPermissions.CREATE_BATCH_UPDATE_PROCESS_INSTANCES_SUSPEND_STATE)
         ),
       scenario()
         .withAuthorizations(
@@ -72,6 +78,11 @@ public class BatchUpdateSuspensionStateAuthorizationTest {
       scenario()
         .withAuthorizations(
           grant(Resources.BATCH, "*", "userId", Permissions.CREATE),
+          grant(Resources.PROCESS_INSTANCE, "*", "userId", Permissions.UPDATE)
+        ),
+      scenario()
+        .withAuthorizations(
+          grant(Resources.BATCH, "*", "userId", BatchPermissions.CREATE_BATCH_UPDATE_PROCESS_INSTANCES_SUSPEND_STATE),
           grant(Resources.PROCESS_INSTANCE, "*", "userId", Permissions.UPDATE)
         )
         .succeeds()
@@ -106,7 +117,7 @@ public class BatchUpdateSuspensionStateAuthorizationTest {
   @Test
   public void executeBatch() {
     //given
-    ProcessDefinition processDefinition = testRule.deployAndGetDefinition(ProcessModels.TWO_TASKS_PROCESS);
+    testRule.deployAndGetDefinition(ProcessModels.TWO_TASKS_PROCESS);
 
     ProcessInstance processInstance1 = engineRule.getRuntimeService().startProcessInstanceByKey("Process");
 
@@ -135,7 +146,9 @@ public class BatchUpdateSuspensionStateAuthorizationTest {
       }
     }
     // then
-    authRule.assertScenario(scenario);
+    if (authRule.assertScenario(scenario)) {
+      assertEquals("userId", batch.getCreateUserId());
+    }
   }
 
 }

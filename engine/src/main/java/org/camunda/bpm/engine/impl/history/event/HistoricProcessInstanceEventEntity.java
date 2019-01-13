@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,7 +15,6 @@
  */
 package org.camunda.bpm.engine.impl.history.event;
 
-import java.util.Date;
 
 /**
  * <p>{@link HistoryEvent} signifying a top-level event in a process instance.</p>
@@ -34,9 +36,6 @@ public class HistoricProcessInstanceEventEntity extends HistoricScopeInstanceEve
   /** the id of the super process instance */
   protected String superProcessInstanceId;
 
-  /** the id of the root process instance */
-  protected String rootProcessInstanceId;
-
   /** the id of the super case instance */
   protected String superCaseInstanceId;
 
@@ -54,17 +53,7 @@ public class HistoricProcessInstanceEventEntity extends HistoricScopeInstanceEve
 
   protected String state;
 
-  protected Date removalTime;
-
   // getters / setters ////////////////////////////////////////
-
-  public Date getRemovalTime() {
-    return removalTime;
-  }
-
-  public void setRemovalTime(Date removalTime) {
-    this.removalTime = removalTime;
-  }
 
   public String getEndActivityId() {
     return endActivityId;
@@ -104,14 +93,6 @@ public class HistoricProcessInstanceEventEntity extends HistoricScopeInstanceEve
 
   public void setSuperProcessInstanceId(String superProcessInstanceId) {
     this.superProcessInstanceId = superProcessInstanceId;
-  }
-
-  public String getRootProcessInstanceId() {
-    return rootProcessInstanceId;
-  }
-
-  public void setRootProcessInstanceId(String rootProcessInstanceId) {
-    this.rootProcessInstanceId = rootProcessInstanceId;
   }
 
   public String getSuperCaseInstanceId() {

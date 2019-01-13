@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -10,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.camunda.bpm.engine.test.history;
 
 import java.util.ArrayList;
@@ -45,7 +47,6 @@ import org.camunda.bpm.engine.test.api.runtime.migration.models.ProcessModels;
 import org.camunda.bpm.model.bpmn.Bpmn;
 import org.camunda.bpm.model.bpmn.BpmnModelInstance;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import static org.camunda.bpm.engine.test.api.runtime.TestOrderingUtil.historicProcessInstanceByProcessDefinitionId;
 import static org.camunda.bpm.engine.test.api.runtime.TestOrderingUtil.historicProcessInstanceByProcessDefinitionKey;
@@ -919,31 +920,6 @@ public class HistoricProcessInstanceTest extends PluggableProcessEngineTestCase 
     assertNotNull(historicProcessInstance.getEndTime());
   }
 
-  /**
-   * See: https://app.camunda.com/jira/browse/CAM-9200
-   * Test ignored until removalTime calculation logic is added
-   * */
-  @Deployment(resources = {
-    "org/camunda/bpm/engine/test/api/runtime/oneTaskProcess.bpmn20.xml"
-  })
-  public void ignoredTestRemovalTime() {
-    // given
-    String processInstanceId = runtimeService.startProcessInstanceByKey("oneTaskProcess").getId();
-
-    // when
-    Task userTask = taskService.createTaskQuery().processInstanceId(processInstanceId).singleResult();
-    taskService.complete(userTask.getId());
-
-    HistoricProcessInstance rootHistoricProcessInstance = historyService.createHistoricProcessInstanceQuery()
-      .processInstanceId(processInstanceId)
-      .singleResult();
-
-    // then
-    assertNotNull(rootHistoricProcessInstance.getEndTime());
-    assertNotNull(rootHistoricProcessInstance.getRemovalTime());
-    assertTrue(rootHistoricProcessInstance.getRemovalTime().after(rootHistoricProcessInstance.getEndTime()));
-  }
-
   @Deployment(resources = {
       "org/camunda/bpm/engine/test/api/cmmn/oneProcessTaskCase.cmmn",
       "org/camunda/bpm/engine/test/api/runtime/oneTaskProcess.bpmn20.xml"
@@ -1016,109 +992,6 @@ public class HistoricProcessInstanceTest extends PluggableProcessEngineTestCase 
 
     assertEquals(0, query.count());
     assertEquals(0, query.list().size());
-  }
-
-  @Deployment(resources = {
-    "org/camunda/bpm/engine/test/api/runtime/nestedSubProcess.bpmn20.xml",
-    "org/camunda/bpm/engine/test/api/runtime/subProcess.bpmn20.xml"
-  })
-  public void testRootProcessInstanceIdPropertySingleTransaction() {
-    String rootProcessInstanceId = runtimeService.startProcessInstanceByKey("nestedSimpleSubProcess").getId();
-
-    HistoricProcessInstance historicParentProcessInstance = historyService.createHistoricProcessInstanceQuery()
-      .processInstanceId(rootProcessInstanceId)
-      .singleResult();
-
-    HistoricProcessInstance historicChildProcessInstance = historyService.createHistoricProcessInstanceQuery()
-      .superProcessInstanceId(rootProcessInstanceId)
-      .singleResult();
-
-    assertNotNull(historicParentProcessInstance.getRootProcessInstanceId());
-    assertEquals(rootProcessInstanceId, historicParentProcessInstance.getRootProcessInstanceId());
-
-    assertNotNull(historicChildProcessInstance.getRootProcessInstanceId());
-    assertEquals(rootProcessInstanceId, historicChildProcessInstance.getRootProcessInstanceId());
-  }
-
-  @Deployment(resources = {
-    "org/camunda/bpm/engine/test/api/runtime/nestedSubProcessAsync.bpmn20.xml",
-    "org/camunda/bpm/engine/test/api/runtime/subProcess.bpmn20.xml"
-  })
-  public void testRootProcessInstanceIdPropertyAsyncBefore() {
-    String rootProcessInstanceId = runtimeService.startProcessInstanceByKey("nestedSimpleSubProcess").getId();
-
-    Job childPIJob = managementService.createJobQuery().singleResult();
-    managementService.executeJob(childPIJob.getId());
-
-    HistoricProcessInstance historicParentProcessInstance = historyService.createHistoricProcessInstanceQuery()
-      .processInstanceId(rootProcessInstanceId)
-      .singleResult();
-
-    HistoricProcessInstance historicChildProcessInstance = historyService.createHistoricProcessInstanceQuery()
-      .superProcessInstanceId(rootProcessInstanceId)
-      .singleResult();
-
-    assertNotNull(historicParentProcessInstance.getRootProcessInstanceId());
-    assertEquals(rootProcessInstanceId, historicParentProcessInstance.getRootProcessInstanceId());
-
-    assertNotNull(historicChildProcessInstance.getRootProcessInstanceId());
-    assertEquals(rootProcessInstanceId, historicChildProcessInstance.getRootProcessInstanceId());
-  }
-
-  @Deployment(resources = {
-    "org/camunda/bpm/engine/test/api/runtime/nestedSubProcessHierarchy.bpmn20.xml",
-    "org/camunda/bpm/engine/test/api/runtime/nestedSubProcessAsync.bpmn20.xml",
-    "org/camunda/bpm/engine/test/api/runtime/subProcess.bpmn20.xml"
-  })
-  public void testRootProcessInstanceIdPropertyMultilevelHierarchy() {
-    String rootProcessInstanceId = runtimeService.startProcessInstanceByKey("nestedHierarchicalProcess").getId();
-
-    Job childPIJob = managementService.createJobQuery().singleResult();
-    managementService.executeJob(childPIJob.getId());
-
-    HistoricProcessInstance historicParentProcessInstance = historyService.createHistoricProcessInstanceQuery()
-      .processInstanceId(rootProcessInstanceId)
-      .singleResult();
-
-    HistoricProcessInstance historicMiddleChildProcessInstance = historyService.createHistoricProcessInstanceQuery()
-      .superProcessInstanceId(rootProcessInstanceId)
-      .singleResult();
-
-    HistoricProcessInstance historicLastChildProcessInstance = historyService.createHistoricProcessInstanceQuery()
-      .superProcessInstanceId(rootProcessInstanceId)
-      .singleResult();
-
-    assertNotNull(historicParentProcessInstance.getRootProcessInstanceId());
-    assertEquals(rootProcessInstanceId, historicParentProcessInstance.getRootProcessInstanceId());
-
-    assertNotNull(historicMiddleChildProcessInstance.getRootProcessInstanceId());
-    assertEquals(rootProcessInstanceId, historicMiddleChildProcessInstance.getRootProcessInstanceId());
-
-    assertNotNull(historicLastChildProcessInstance.getRootProcessInstanceId());
-    assertEquals(rootProcessInstanceId, historicLastChildProcessInstance.getRootProcessInstanceId());
-  }
-
-  @Deployment(resources = {
-    "org/camunda/bpm/engine/test/api/runtime/VariableInstanceQueryTest.testParallelMultiInstanceSubProcess.bpmn20.xml"
-  })
-  public void testRootProcessInstanceIdPropertyMultiInstance() {
-    String rootProcessInstanceId = runtimeService.startProcessInstanceByKey("miSequentialSubprocess").getId();
-
-    HistoricProcessInstance historicParentProcessInstance = historyService.createHistoricProcessInstanceQuery()
-      .processInstanceId(rootProcessInstanceId)
-      .singleResult();
-
-    List<HistoricProcessInstance> historicChildProcessInstances = historyService.createHistoricProcessInstanceQuery()
-      .superProcessInstanceId(rootProcessInstanceId)
-      .list();
-
-    assertNotNull(historicParentProcessInstance.getRootProcessInstanceId());
-    assertEquals(rootProcessInstanceId, historicParentProcessInstance.getRootProcessInstanceId());
-
-    for (HistoricProcessInstance historicChildProcessInstance : historicChildProcessInstances) {
-      assertNotNull(historicChildProcessInstance.getRootProcessInstanceId());
-      assertEquals(rootProcessInstanceId, historicChildProcessInstance.getRootProcessInstanceId());
-    }
   }
 
   @Deployment(resources = {

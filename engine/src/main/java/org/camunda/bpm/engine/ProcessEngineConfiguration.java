@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -10,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.camunda.bpm.engine;
 
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -142,6 +142,31 @@ public abstract class ProcessEngineConfiguration {
    * The default history level that is used when no history level is configured
    */
   public static final String HISTORY_DEFAULT = HISTORY_AUDIT;
+
+  /**
+   * History cleanup is performed based on end time.
+   */
+  public static final String HISTORY_CLEANUP_STRATEGY_END_TIME_BASED = "endTimeBased";
+
+  /**
+   * History cleanup is performed based on removal time.
+   */
+  public static final String HISTORY_CLEANUP_STRATEGY_REMOVAL_TIME_BASED = "removalTimeBased";
+
+  /**
+   * Removal time for historic entities is set on execution start.
+   */
+  public static final String HISTORY_REMOVAL_TIME_STRATEGY_START = "start";
+
+  /**
+   * Removal time for historic entities is set if execution has been ended.
+   */
+  public static final String HISTORY_REMOVAL_TIME_STRATEGY_END = "end";
+
+  /**
+   * Removal time for historic entities is not set.
+   */
+  public static final String HISTORY_REMOVAL_TIME_STRATEGY_NONE = "none";
 
   /**
    * Always enables check for {@link Authorization#AUTH_TYPE_REVOKE revoke} authorizations.
@@ -321,6 +346,14 @@ public abstract class ProcessEngineConfiguration {
    * <p>The default value is <code>false</code>.</p>
    */
   protected boolean enableExceptionsAfterUnhandledBpmnError = false;
+
+  /**
+   * If the value of this flag is set to <code>false</code>, {@link OptimisticLockingException}s
+   * are not skipped for UPDATE or DELETE operations applied to historic entities.
+   *
+   * <p>The default value is <code>true</code>.</p>
+   */
+  protected boolean skipHistoryOptimisticLockingExceptions = true;
 
   /** use one of the static createXxxx methods instead */
   protected ProcessEngineConfiguration() {
@@ -860,4 +893,14 @@ public abstract class ProcessEngineConfiguration {
   public void setEnableExceptionsAfterUnhandledBpmnError(boolean enableExceptionsAfterUnhandledBpmnError) {
     this.enableExceptionsAfterUnhandledBpmnError = enableExceptionsAfterUnhandledBpmnError;
   }
+
+  public boolean isSkipHistoryOptimisticLockingExceptions() {
+    return skipHistoryOptimisticLockingExceptions;
+  }
+
+  public ProcessEngineConfiguration setSkipHistoryOptimisticLockingExceptions(boolean skipHistoryOptimisticLockingExceptions) {
+    this.skipHistoryOptimisticLockingExceptions = skipHistoryOptimisticLockingExceptions;
+    return this;
+  }
+
 }

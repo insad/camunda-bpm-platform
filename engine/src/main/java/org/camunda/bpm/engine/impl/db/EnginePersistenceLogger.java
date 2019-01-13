@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -311,7 +314,7 @@ public class EnginePersistenceLogger extends ProcessEngineLogger {
 
   public AuthorizationException requiredCamundaAdminException() {
     return new AuthorizationException(
-      exceptionMessage("029", "Required admin authenticated group."));
+      exceptionMessage("029", "Required admin authenticated group or user."));
   }
 
   public void createChildExecution(ExecutionEntity child, ExecutionEntity parent) {
@@ -532,14 +535,6 @@ public class EnginePersistenceLogger extends ProcessEngineLogger {
         "063",
         "The collect result value '{}' of the decision table result is not of type integer, long or double.",
         collectResultValue
-        ));
-  }
-
-  public ProcessEngineException updateTransientVariableException(String variableName) {
-    return new ProcessEngineException(exceptionMessage(
-        "064",
-        "The variable with name '{}' can not be updated because it is transient and read-only.",
-        variableName
         ));
   }
 

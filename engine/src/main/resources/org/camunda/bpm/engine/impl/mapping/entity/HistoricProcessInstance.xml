@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-
 <!--
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~       http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
 
+    Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="org.camunda.bpm.engine.impl.persistence.entity.HistoricProcessInstanceEntity">
@@ -47,7 +49,7 @@
       START_ACT_ID_,
       END_ACT_ID_,
       SUPER_PROCESS_INSTANCE_ID_,
-      ROOT_PROCESS_INSTANCE_ID_,
+      ROOT_PROC_INST_ID_,
       SUPER_CASE_INSTANCE_ID_,
       CASE_INST_ID_,
       DELETE_REASON_,
@@ -83,6 +85,7 @@
     update ${prefix}ACT_HI_PROCINST set
     PROC_DEF_ID_ = #{processDefinitionId, jdbcType=VARCHAR},
     PROC_DEF_KEY_ = #{processDefinitionKey, jdbcType=VARCHAR},
+    BUSINESS_KEY_ = #{businessKey, jdbcType=VARCHAR},
     END_ACT_ID_ = #{endActivityId, jdbcType=VARCHAR},
     DELETE_REASON_ = #{deleteReason, jdbcType=VARCHAR},
     SUPER_PROCESS_INSTANCE_ID_ = #{superProcessInstanceId, jdbcType=VARCHAR},
@@ -100,11 +103,19 @@
     where ID_ = #{id, jdbcType=VARCHAR}
   </update>
 
+  <update id="updateHistoricProcessInstanceEventsByRootProcessInstanceId"
+          parameterType="java.util.Map">
+    update ${prefix}ACT_HI_PROCINST set
+    REMOVAL_TIME_ = #{removalTime, jdbcType=TIMESTAMP}
+
+    where ROOT_PROC_INST_ID_ = #{rootProcessInstanceId, jdbcType=VARCHAR}
+  </update>
+
   <!-- HISTORIC PROCESS INSTANCE SELECT -->
 
   <select id="selectHistoricProcessInstanceEvent" parameterType="java.lang.String"
           resultMap="historicProcessInstanceResultMap">
-    select HPI.START_TIME_ from ${prefix}ACT_HI_PROCINST HPI
+    select HPI.START_TIME_, HPI.REMOVAL_TIME_ from ${prefix}ACT_HI_PROCINST HPI
     where HPI.ID_ = #{id, jdbcType=VARCHAR}
   </select>
 
@@ -121,6 +132,38 @@
       <bind name="listOfIds" value="list"/>
       <bind name="fieldName" value="'PROC_INST_ID_'"/>
       <include refid="org.camunda.bpm.engine.impl.persistence.entity.Commons.applyInForPaginatedCollection"/>
+  </delete>
+
+  <delete id="deleteHistoricProcessInstancesByRemovalTime"
+          parameterType="org.camunda.bpm.engine.impl.db.ListQueryParameterObject">
+    <bind name="date" value="'REMOVAL_TIME_'"/>
+    <bind name="reportPeriodUnitName" value="'MINUTE'"/>
+    delete ${limitBeforeWithoutOffset} from ${prefix}ACT_HI_PROCINST
+    where REMOVAL_TIME_ &lt;= #{parameter.removalTime}
+    <include refid="andWhereMinuteInDateBetweenSql"/>
+    ${limitAfterWithoutOffset}
+  </delete>
+
+  <delete id="deleteHistoricProcessInstancesByRemovalTime_oracle"
+          parameterType="org.camunda.bpm.engine.impl.db.ListQueryParameterObject">
+    <bind name="date" value="'REMOVAL_TIME_'"/>
+    <bind name="reportPeriodUnitName" value="'MINUTE'"/>
+    delete ${limitBeforeWithoutOffset} from ${prefix}ACT_HI_PROCINST
+    where REMOVAL_TIME_ &lt;= #{parameter.removalTime}
+    <include refid="andWhereMinuteInDateBetweenSql_oracle"/>
+    ${limitAfterWithoutOffset}
+  </delete>
+
+  <delete id="deleteHistoricProcessInstancesByRemovalTime_postgres_or_db2"
+          parameterType="org.camunda.bpm.engine.impl.db.ListQueryParameterObject">
+    <bind name="date" value="'REMOVAL_TIME_'"/>
+    <bind name="reportPeriodUnitName" value="'MINUTE'"/>
+    delete ${limitBeforeWithoutOffset} from ${prefix}ACT_HI_PROCINST
+    where ID_ IN
+      (SELECT ID_
+       FROM ${prefix}ACT_HI_PROCINST
+       WHERE REMOVAL_TIME_ &lt;= #{parameter.removalTime} <include refid="andWhereMinuteInDateBetweenSql"/>
+       ${limitAfterWithoutOffset})
   </delete>
 
   <!-- HISTORIC PROCESS INSTANCE RESULT MAP -->
@@ -142,7 +185,7 @@
     <result property="startActivityId" column="START_ACT_ID_" jdbcType="VARCHAR"/>
     <result property="endActivityId" column="END_ACT_ID_" jdbcType="VARCHAR"/>
     <result property="superProcessInstanceId" column="SUPER_PROCESS_INSTANCE_ID_" jdbcType="VARCHAR"/>
-    <result property="rootProcessInstanceId" column="ROOT_PROCESS_INSTANCE_ID_" jdbcType="VARCHAR"/>
+    <result property="rootProcessInstanceId" column="ROOT_PROC_INST_ID_" jdbcType="VARCHAR"/>
     <result property="superCaseInstanceId" column="SUPER_CASE_INSTANCE_ID_" jdbcType="VARCHAR"/>
     <result property="caseInstanceId" column="CASE_INST_ID_" jdbcType="VARCHAR"/>
     <result property="deleteReason" column="DELETE_REASON_" jdbcType="VARCHAR"/>
@@ -324,6 +367,10 @@
       <if test="startedBy != null">
         and SELF.START_USER_ID_ = #{startedBy}
       </if>
+
+      <if test="isRootProcessInstances">
+        and SELF.SUPER_PROCESS_INSTANCE_ID_ is null
+      </if>
       <if test="superProcessInstanceId != null">
         and SELF.SUPER_PROCESS_INSTANCE_ID_ = #{superProcessInstanceId}
       </if>
@@ -404,12 +451,17 @@
         )
       </if>
 
-      <if test="tenantIds != null &amp;&amp; tenantIds.length > 0">
-        and SELF.TENANT_ID_ in
-        <foreach item="tenantId" index="index" collection="tenantIds"
-                 open="(" separator="," close=")">
-          #{tenantId}
-        </foreach>
+      <if test="isTenantIdSet">
+        <if test="tenantIds != null &amp;&amp; tenantIds.length > 0">
+          and SELF.TENANT_ID_ in
+          <foreach item="tenantId" index="index" collection="tenantIds"
+                   open="(" separator="," close=")">
+            #{tenantId}
+          </foreach>
+        </if>
+        <if test="tenantIds == null">
+          and SELF.TENANT_ID_ is null
+        </if>
       </if>
 
       <if test="authCheck.isAuthorizationCheckEnabled &amp;&amp; authCheck.authUserId != null">
@@ -455,14 +507,14 @@
 
   <sql id="andWhereMinuteInDateBetweenSql">
     <if test="parameter.minuteFrom != null and parameter.minuteTo != null">
-      AND ${datepart1}<include refid="org.camunda.bpm.engine.impl.persistence.entity.Commons.periodUnitFunction"/>${datepart2}pi.END_TIME_${datepart3}
+      AND ${datepart1}<include refid="org.camunda.bpm.engine.impl.persistence.entity.Commons.periodUnitFunction"/>${datepart2}${date}${datepart3}
       between #{parameter.minuteFrom, jdbcType=INTEGER} and #{parameter.minuteTo, jdbcType=INTEGER}
     </if>
   </sql>
 
   <sql id="andWhereMinuteInDateBetweenSql_oracle">
     <if test="parameter.minuteFrom != null and parameter.minuteTo != null">
-      AND ${datepart1}pi.END_TIME_${datepart2}<include refid="org.camunda.bpm.engine.impl.persistence.entity.Commons.periodUnitFunction"/>${datepart3}
+      AND ${datepart1}${date}${datepart2}<include refid="org.camunda.bpm.engine.impl.persistence.entity.Commons.periodUnitFunction"/>${datepart3}
       between #{parameter.minuteFrom, jdbcType=INTEGER} and #{parameter.minuteTo, jdbcType=INTEGER}
     </if>
   </sql>
@@ -526,7 +578,14 @@
         RES.HISTORY_TTL_,
         RES.TENANT_ID_,
         F.FINISHED_,
-        SUM(CASE WHEN RES.HISTORY_TTL_ is not null and PI.END_TIME_ is not null and (RES.HISTORY_TTL_ = 0 OR ${dayComparator}) THEN 1 ELSE 0 END) AS CLEANABLE_
+        <choose>
+          <when test="isHistoryCleanupStrategyRemovalTimeBased">
+            SUM(CASE WHEN PI.REMOVAL_TIME_ is not null and PI.REMOVAL_TIME_ &lt;= #{currentTimestamp} THEN 1 ELSE 0 END) AS CLEANABLE_
+          </when>
+          <otherwise>
+            SUM(CASE WHEN RES.HISTORY_TTL_ is not null and PI.END_TIME_ is not null and (RES.HISTORY_TTL_ = 0 OR ${dayComparator}) THEN 1 ELSE 0 END) AS CLEANABLE_
+          </otherwise>
+        </choose>
       FROM
         (
           SELECT DISTINCT RES.*
@@ -578,10 +637,6 @@
           GROUP BY PI.PROC_DEF_ID_
           ) F ON F.PROC_DEF_ID_ = PI.PROC_DEF_ID_
 
-        <if test="isCompact">
-          WHERE FINISHED_ > 0
-        </if>
-
         GROUP BY RES.ID_,
           RES.KEY_,
           RES.NAME_,
@@ -591,6 +646,14 @@
           F.FINISHED_
 
     ) RES
+    <choose>
+      <when test="isCompact &amp;&amp; isHistoryCleanupStrategyRemovalTimeBased">
+        WHERE (RES.CLEANABLE_ > 0 OR FINISHED_ > 0)
+      </when>
+      <when test="isCompact &amp;&amp; !isHistoryCleanupStrategyRemovalTimeBased">
+        WHERE FINISHED_ > 0
+      </when>
+    </choose>
 
   </sql>
 

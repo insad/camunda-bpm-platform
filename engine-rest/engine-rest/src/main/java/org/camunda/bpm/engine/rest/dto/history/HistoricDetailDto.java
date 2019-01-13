@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,6 +52,8 @@ public abstract class HistoricDetailDto {
   protected String tenantId;
   protected String userOperationId;
   protected Date time;
+  protected Date removalTime;
+  protected String rootProcessInstanceId;
 
   public String getId() {
     return id;
@@ -106,6 +111,14 @@ public abstract class HistoricDetailDto {
     return time;
   }
 
+  public Date getRemovalTime() {
+    return removalTime;
+  }
+
+  public String getRootProcessInstanceId() {
+    return rootProcessInstanceId;
+  }
+
   public static HistoricDetailDto fromHistoricDetail(HistoricDetail historicDetail) {
 
     HistoricDetailDto dto = null;
@@ -138,6 +151,8 @@ public abstract class HistoricDetailDto {
     dto.tenantId = historicDetail.getTenantId();
     dto.userOperationId = historicDetail.getUserOperationId();
     dto.time = historicDetail.getTime();
+    dto.removalTime = historicDetail.getRemovalTime();
+    dto.rootProcessInstanceId = historicDetail.getRootProcessInstanceId();
   }
 
 

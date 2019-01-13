@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -70,10 +73,10 @@ public enum Permissions implements Permission {
   /** Indicates that DELETE_INSTANCE interactions are permitted. */
   DELETE_INSTANCE("DELETE_INSTANCE", 2048),
 
-  /** Indicates that UPDATE_INSTANCE interactions are permitted. */
+  /** Indicates that READ_HISTORY interactions are permitted. */
   READ_HISTORY("READ_HISTORY", 4096),
 
-  /** Indicates that DELETE_INSTANCE interactions are permitted. */
+  /** Indicates that DELETE_HISTORY interactions are permitted. */
   DELETE_HISTORY("DELETE_HISTORY", 8192),
 
   /** Indicates that TASK_WORK interactions are permitted */
@@ -85,7 +88,7 @@ public enum Permissions implements Permission {
   /** Indicates that MIGRATE_INSTANCE interactions are permitted */
   MIGRATE_INSTANCE("MIGRATE_INSTANCE", 65536);
 
-  // implmentation //////////////////////////
+  // implementation //////////////////////////
 
   private String name;
   private int id;

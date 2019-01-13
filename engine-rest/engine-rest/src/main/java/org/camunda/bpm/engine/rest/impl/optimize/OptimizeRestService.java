@@ -1,9 +1,12 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,15 +17,19 @@ package org.camunda.bpm.engine.rest.impl.optimize;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.camunda.bpm.engine.history.HistoricActivityInstance;
+import org.camunda.bpm.engine.history.HistoricDecisionInstance;
 import org.camunda.bpm.engine.history.HistoricProcessInstance;
+import org.camunda.bpm.engine.history.HistoricTaskInstance;
 import org.camunda.bpm.engine.history.HistoricVariableUpdate;
+import org.camunda.bpm.engine.history.UserOperationLogEntry;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
-import org.camunda.bpm.engine.impl.history.event.HistoryEvent;
 import org.camunda.bpm.engine.rest.dto.converter.DateConverter;
 import org.camunda.bpm.engine.rest.dto.history.HistoricActivityInstanceDto;
-import org.camunda.bpm.engine.rest.dto.history.HistoricOptimizeVariableUpdateDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricDecisionInstanceDto;
 import org.camunda.bpm.engine.rest.dto.history.HistoricProcessInstanceDto;
-import org.camunda.bpm.engine.rest.dto.history.HistoricVariableUpdateDto;
+import org.camunda.bpm.engine.rest.dto.history.HistoricTaskInstanceDto;
+import org.camunda.bpm.engine.rest.dto.history.UserOperationLogEntryDto;
+import org.camunda.bpm.engine.rest.dto.history.optimize.HistoricOptimizeVariableUpdateDto;
 import org.camunda.bpm.engine.rest.impl.AbstractRestProcessEngineAware;
 
 import javax.ws.rs.GET;
@@ -63,9 +70,105 @@ public class OptimizeRestService extends AbstractRestProcessEngineAware {
     List<HistoricActivityInstance> historicActivityInstances =
       config.getOptimizeService().getCompletedHistoricActivityInstances(finishedAfter, finishedAt, maxResults);
 
-    List<HistoricActivityInstanceDto> result = new ArrayList<HistoricActivityInstanceDto>();
+    List<HistoricActivityInstanceDto> result = new ArrayList<>();
     for (HistoricActivityInstance instance : historicActivityInstances) {
       HistoricActivityInstanceDto dto = HistoricActivityInstanceDto.fromHistoricActivityInstance(instance);
+      result.add(dto);
+    }
+    return result;
+  }
+
+  @GET
+  @Path("/activity-instance/running")
+  public List<HistoricActivityInstanceDto> getRunningHistoricActivityInstances(@QueryParam("startedAfter") String startedAfterAsString,
+                                                                               @QueryParam("startedAt") String startedAtAsString,
+                                                                               @QueryParam("maxResults") int maxResults) {
+
+    Date startedAfter = dateConverter.convertQueryParameterToType(startedAfterAsString);
+    Date startedAt = dateConverter.convertQueryParameterToType(startedAtAsString);
+    maxResults = ensureValidMaxResults(maxResults);
+
+    ProcessEngineConfigurationImpl config =
+      (ProcessEngineConfigurationImpl) getProcessEngine().getProcessEngineConfiguration();
+
+    List<HistoricActivityInstance> historicActivityInstances =
+      config.getOptimizeService().getRunningHistoricActivityInstances(startedAfter, startedAt, maxResults);
+
+    List<HistoricActivityInstanceDto> result = new ArrayList<>();
+    for (HistoricActivityInstance instance : historicActivityInstances) {
+      HistoricActivityInstanceDto dto = HistoricActivityInstanceDto.fromHistoricActivityInstance(instance);
+      result.add(dto);
+    }
+    return result;
+  }
+
+  @GET
+  @Path("/task-instance/completed")
+  public List<HistoricTaskInstanceDto> getCompletedHistoricTaskInstances(@QueryParam("finishedAfter") String finishedAfterAsString,
+                                                                         @QueryParam("finishedAt") String finishedAtAsString,
+                                                                         @QueryParam("maxResults") int maxResults) {
+
+    Date finishedAfter = dateConverter.convertQueryParameterToType(finishedAfterAsString);
+    Date finishedAt = dateConverter.convertQueryParameterToType(finishedAtAsString);
+    maxResults = ensureValidMaxResults(maxResults);
+
+    ProcessEngineConfigurationImpl config =
+      (ProcessEngineConfigurationImpl) getProcessEngine().getProcessEngineConfiguration();
+
+    List<HistoricTaskInstance> historicTaskInstances =
+      config.getOptimizeService().getCompletedHistoricTaskInstances(finishedAfter, finishedAt, maxResults);
+
+    List<HistoricTaskInstanceDto> result = new ArrayList<>();
+    for (HistoricTaskInstance instance : historicTaskInstances) {
+      HistoricTaskInstanceDto dto = HistoricTaskInstanceDto.fromHistoricTaskInstance(instance);
+      result.add(dto);
+    }
+    return result;
+  }
+
+  @GET
+  @Path("/task-instance/running")
+  public List<HistoricTaskInstanceDto> getRunningHistoricTaskInstances(@QueryParam("startedAfter") String startedAfterAsString,
+                                                                       @QueryParam("startedAt") String startedAtAsString,
+                                                                       @QueryParam("maxResults") int maxResults) {
+
+    Date startedAfter = dateConverter.convertQueryParameterToType(startedAfterAsString);
+    Date startedAt = dateConverter.convertQueryParameterToType(startedAtAsString);
+    maxResults = ensureValidMaxResults(maxResults);
+
+    ProcessEngineConfigurationImpl config =
+      (ProcessEngineConfigurationImpl) getProcessEngine().getProcessEngineConfiguration();
+
+    List<HistoricTaskInstance> historicTaskInstances =
+      config.getOptimizeService().getRunningHistoricTaskInstances(startedAfter, startedAt, maxResults);
+
+    List<HistoricTaskInstanceDto> result = new ArrayList<>();
+    for (HistoricTaskInstance instance : historicTaskInstances) {
+      HistoricTaskInstanceDto dto = HistoricTaskInstanceDto.fromHistoricTaskInstance(instance);
+      result.add(dto);
+    }
+    return result;
+  }
+
+  @GET
+  @Path("/user-operation")
+  public List<UserOperationLogEntryDto> getHistoricUserOperationLogs(@QueryParam("occurredAfter") String occurredAfterAsString,
+                                                                     @QueryParam("occurredAt") String occurredAtAsString,
+                                                                     @QueryParam("maxResults") int maxResults) {
+
+    Date occurredAfter = dateConverter.convertQueryParameterToType(occurredAfterAsString);
+    Date occurredAt = dateConverter.convertQueryParameterToType(occurredAtAsString);
+    maxResults = ensureValidMaxResults(maxResults);
+
+    ProcessEngineConfigurationImpl config =
+      (ProcessEngineConfigurationImpl) getProcessEngine().getProcessEngineConfiguration();
+
+    List<UserOperationLogEntry> operationLogEntries =
+      config.getOptimizeService().getHistoricUserOperationLogs(occurredAfter, occurredAt, maxResults);
+
+    List<UserOperationLogEntryDto> result = new ArrayList<>();
+    for (UserOperationLogEntry logEntry : operationLogEntries) {
+      UserOperationLogEntryDto dto = UserOperationLogEntryDto.map(logEntry);
       result.add(dto);
     }
     return result;
@@ -85,7 +188,7 @@ public class OptimizeRestService extends AbstractRestProcessEngineAware {
     List<HistoricProcessInstance> historicProcessInstances =
       config.getOptimizeService().getCompletedHistoricProcessInstances(finishedAfter, finishedAt, maxResults);
 
-    List<HistoricProcessInstanceDto> result = new ArrayList<HistoricProcessInstanceDto>();
+    List<HistoricProcessInstanceDto> result = new ArrayList<>();
     for (HistoricProcessInstance instance : historicProcessInstances) {
       HistoricProcessInstanceDto dto = HistoricProcessInstanceDto.fromHistoricProcessInstance(instance);
       result.add(dto);
@@ -107,7 +210,7 @@ public class OptimizeRestService extends AbstractRestProcessEngineAware {
     List<HistoricProcessInstance> historicProcessInstances =
       config.getOptimizeService().getRunningHistoricProcessInstances(startedAfter, startedAt, maxResults);
 
-    List<HistoricProcessInstanceDto> result = new ArrayList<HistoricProcessInstanceDto>();
+    List<HistoricProcessInstanceDto> result = new ArrayList<>();
     for (HistoricProcessInstance instance : historicProcessInstances) {
       HistoricProcessInstanceDto dto = HistoricProcessInstanceDto.fromHistoricProcessInstance(instance);
       result.add(dto);
@@ -129,13 +232,37 @@ public class OptimizeRestService extends AbstractRestProcessEngineAware {
     List<HistoricVariableUpdate> historicVariableUpdates =
       config.getOptimizeService().getHistoricVariableUpdates(occurredAfter, occurredAt, maxResults);
 
-    List<HistoricOptimizeVariableUpdateDto> result = new ArrayList<HistoricOptimizeVariableUpdateDto>();
+    List<HistoricOptimizeVariableUpdateDto> result = new ArrayList<>();
     for (HistoricVariableUpdate instance : historicVariableUpdates) {
       HistoricOptimizeVariableUpdateDto dto =
         HistoricOptimizeVariableUpdateDto.fromHistoricVariableUpdate(instance);
       result.add(dto);
     }
     return result;
+  }
+
+  @GET
+  @Path("/decision-instance")
+  public List<HistoricDecisionInstanceDto> getHistoricDecisionInstances(@QueryParam("evaluatedAfter") String evaluatedAfterAsString,
+                                                                        @QueryParam("evaluatedAt") String evaluatedAtAsString,
+                                                                        @QueryParam("maxResults") int maxResults) {
+    Date evaluatedAfter = dateConverter.convertQueryParameterToType(evaluatedAfterAsString);
+    Date evaluatedAt = dateConverter.convertQueryParameterToType(evaluatedAtAsString);
+    maxResults = ensureValidMaxResults(maxResults);
+
+    ProcessEngineConfigurationImpl config =
+      (ProcessEngineConfigurationImpl) getProcessEngine().getProcessEngineConfiguration();
+    List<HistoricDecisionInstance> historicDecisionInstances =
+      config.getOptimizeService().getHistoricDecisionInstances(evaluatedAfter, evaluatedAt, maxResults);
+
+    List<HistoricDecisionInstanceDto> resultList = new ArrayList<>();
+    for (HistoricDecisionInstance historicDecisionInstance : historicDecisionInstances) {
+      HistoricDecisionInstanceDto dto =
+        HistoricDecisionInstanceDto.fromHistoricDecisionInstance(historicDecisionInstance);
+      resultList.add(dto);
+    }
+
+    return resultList;
   }
 
   protected int ensureValidMaxResults(int givenMaxResults) {

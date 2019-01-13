@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +18,7 @@ package org.camunda.bpm.engine.rest.spi;
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.rest.dto.externaltask.FetchExternalTasksExtendedDto;
 
+import javax.servlet.ServletContextEvent;
 import javax.ws.rs.container.AsyncResponse;
 
 /**
@@ -42,5 +46,12 @@ public interface FetchAndLockHandler {
    * @param processEngine provides the process engine context of the respective request
    */
   void addPendingRequest(FetchExternalTasksExtendedDto dto, AsyncResponse asyncResponse, ProcessEngine processEngine);
+
+  /**
+   * Invoked on initialization of the servlet context
+   *
+   * @param servletContextEvent provides the servlet context
+   */
+  void contextInitialized(ServletContextEvent servletContextEvent);
 
 }

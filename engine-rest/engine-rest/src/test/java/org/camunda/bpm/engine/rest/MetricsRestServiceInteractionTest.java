@@ -1,4 +1,7 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -10,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.camunda.bpm.engine.rest;
 
 import static org.camunda.bpm.engine.rest.util.DateTimeUtils.DATE_FORMAT_WITH_TIMEZONE;
 import static org.camunda.bpm.engine.rest.util.DateTimeUtils.withTimezone;
 import static org.hamcrest.Matchers.*;
-import static com.jayway.restassured.RestAssured.given;
+import static io.restassured.RestAssured.given;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -163,6 +165,23 @@ public class MetricsRestServiceInteractionTest extends AbstractRestServiceTest {
   }
 
   @Test
+  public void testGetIntervalAggregation() {
+    given()
+      .queryParam("aggregateByReporter", true)
+      .then()
+        .expect()
+          .statusCode(Status.OK.getStatusCode())
+      .when()
+        .get(METRICS_URL);
+
+    verify(meterQueryMock).name(null);
+    verify(meterQueryMock).reporter(null);
+    verify(meterQueryMock).aggregateByReporter();
+    verify(meterQueryMock, times(1)).interval();
+    verifyNoMoreInteractions(meterQueryMock);
+  }
+
+  @Test
   public void testGetIntervalWithStartDate() {
 
     given()
@@ -224,6 +243,7 @@ public class MetricsRestServiceInteractionTest extends AbstractRestServiceTest {
       .queryParam("firstResult", 10)
       .queryParam("startDate", DATE_FORMAT_WITH_TIMEZONE.format(new Date(0)))
       .queryParam("endDate", DATE_FORMAT_WITH_TIMEZONE.format(new Date(15 * 60 * 1000)))
+      .queryParam("aggregateByReporter", true)
       .queryParam("interval", 300)
       .then()
         .expect()
@@ -237,6 +257,7 @@ public class MetricsRestServiceInteractionTest extends AbstractRestServiceTest {
     verify(meterQueryMock).limit(10);
     verify(meterQueryMock).startDate(new Date(0));
     verify(meterQueryMock).endDate(new Date(15 * 60 * 1000));
+    verify(meterQueryMock).aggregateByReporter();
     verify(meterQueryMock, times(1)).interval(300);
     verifyNoMoreInteractions(meterQueryMock);
   }

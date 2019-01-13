@@ -1,4 +1,7 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -74,37 +77,6 @@ public class SingleConsumerConditionTest {
     catch (IllegalArgumentException e) {
       // expected
     }
-  }
-
-  @Test(timeout = 10000)
-  public void conditionStressTest() throws InterruptedException {
-
-    final SingleConsumerCondition condition = new SingleConsumerCondition(Thread.currentThread());
-
-    final AtomicInteger signalCounter = new AtomicInteger();
-
-    Thread consumer = new Thread() {
-      @Override
-      public void run() {
-        for (int i = 0; i < 500000; i++) {
-
-          condition.signal();
-
-          while (signalCounter.get() == i) {
-            Thread.yield();
-          }
-        }
-      }
-    };
-
-    consumer.start();
-
-    for (int i = 0; i < 500000; i++) {
-      condition.await(100000);
-      signalCounter.set(i + 1);
-    }
-
-    consumer.join();
   }
 
 }

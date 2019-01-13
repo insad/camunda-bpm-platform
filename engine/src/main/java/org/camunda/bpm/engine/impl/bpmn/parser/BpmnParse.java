@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -235,6 +238,7 @@ public class BpmnParse extends Parse {
     this.expressionManager = parser.getExpressionManager();
     this.parseListeners = parser.getParseListeners();
     setSchemaResource(ReflectUtil.getResourceUrlAsString(BpmnParser.BPMN_20_SCHEMA_LOCATION));
+    setEnableXxeProcessing(Context.getProcessEngineConfiguration().isEnableXxeProcessing());
   }
 
   public BpmnParse deployment(DeploymentEntity deployment) {
@@ -854,10 +858,12 @@ public class BpmnParse extends Parse {
 
       ensureNoIoMappingDefined(startEventElement);
 
+      parseExecutionListenersOnScope(startEventElement, startEventActivity);
+
       for (BpmnParseListener parseListener : parseListeners) {
         parseListener.parseStartEvent(startEventElement, scope, startEventActivity);
       }
-      parseExecutionListenersOnScope(startEventElement, startEventActivity);
+
     }
 
     if (scope instanceof ProcessDefinitionEntity) {
@@ -1433,11 +1439,11 @@ public class BpmnParse extends Parse {
       addError("Unsupported intermediate catch event type", intermediateEventElement);
     }
 
+    parseExecutionListenersOnScope(intermediateEventElement, nestedActivity);
+
     for (BpmnParseListener parseListener : parseListeners) {
       parseListener.parseIntermediateCatchEvent(intermediateEventElement, scopeElement, nestedActivity);
     }
-
-    parseExecutionListenersOnScope(intermediateEventElement, nestedActivity);
 
     return nestedActivity;
   }
@@ -1543,13 +1549,13 @@ public class BpmnParse extends Parse {
       activityBehavior = new IntermediateThrowNoneEventActivityBehavior();
     }
 
-    for (BpmnParseListener parseListener : parseListeners) {
-      parseListener.parseIntermediateThrowEvent(intermediateEventElement, scopeElement, nestedActivityImpl);
-    }
-
     nestedActivityImpl.setActivityBehavior(activityBehavior);
 
     parseExecutionListenersOnScope(intermediateEventElement, nestedActivityImpl);
+
+    for (BpmnParseListener parseListener : parseListeners) {
+      parseListener.parseIntermediateThrowEvent(intermediateEventElement, scopeElement, nestedActivityImpl);
+    }
 
     return nestedActivityImpl;
   }
@@ -1988,7 +1994,12 @@ public class BpmnParse extends Parse {
         Element sibling = siblingsMap.get(targetRef);
         if (sibling != null) {
           if (sibling.getTagName().equals(ActivityTypes.INTERMEDIATE_EVENT_CATCH)) {
-            parseIntermediateCatchEvent(sibling, scope, activity);
+            ActivityImpl catchEventActivity = parseIntermediateCatchEvent(sibling, scope, activity);
+
+            if (catchEventActivity != null) {
+              parseActivityInputOutput(sibling, catchEventActivity);
+            }
+
           } else {
             addError("Event based gateway can only be connected to elements of type intermediateCatchEvent", sibling);
           }
@@ -2933,11 +2944,12 @@ public class BpmnParse extends Parse {
 
       parseAsynchronousContinuationForActivity(endEventElement, activity);
 
+      parseExecutionListenersOnScope(endEventElement, activity);
+
       for (BpmnParseListener parseListener : parseListeners) {
         parseListener.parseEndEvent(endEventElement, scope, activity);
       }
 
-      parseExecutionListenersOnScope(endEventElement, activity);
     }
   }
 
@@ -3055,13 +3067,14 @@ public class BpmnParse extends Parse {
 
       ensureNoIoMappingDefined(boundaryEventElement);
 
+      boundaryEventActivity.setActivityBehavior(behavior);
+
+      parseExecutionListenersOnScope(boundaryEventElement, boundaryEventActivity);
+
       for (BpmnParseListener parseListener : parseListeners) {
         parseListener.parseBoundaryEvent(boundaryEventElement, flowScope, boundaryEventActivity);
       }
 
-      boundaryEventActivity.setActivityBehavior(behavior);
-
-      parseExecutionListenersOnScope(boundaryEventElement, boundaryEventActivity);
     }
 
   }

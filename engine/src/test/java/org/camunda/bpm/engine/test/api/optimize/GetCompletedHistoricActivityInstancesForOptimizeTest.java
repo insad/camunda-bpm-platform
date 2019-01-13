@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -140,7 +143,7 @@ public class GetCompletedHistoricActivityInstancesForOptimizeTest {
       optimizeService.getCompletedHistoricActivityInstances(now, null, 10);
 
     // then
-    Set<String> allowedActivityIds = new HashSet<String>(Arrays.asList("userTask", "endEvent"));
+    Set<String> allowedActivityIds = new HashSet<>(Arrays.asList("userTask", "endEvent"));
     assertThat(completedHistoricActivityInstances.size(), is(2));
     assertTrue(allowedActivityIds.contains(completedHistoricActivityInstances.get(0).getActivityId()));
     assertTrue(allowedActivityIds.contains(completedHistoricActivityInstances.get(1).getActivityId()));
@@ -280,8 +283,6 @@ public class GetCompletedHistoricActivityInstancesForOptimizeTest {
     return new Date(2L);
   }
 
-  // test fetches only completed, even if there are still running activities
-
   private void completeAllUserTasks() {
     List<Task> list = taskService.createTaskQuery().list();
     for (Task task : list) {
@@ -294,8 +295,6 @@ public class GetCompletedHistoricActivityInstancesForOptimizeTest {
     User user = identityService.newUser(userId);
     identityService.saveUser(user);
   }
-
-
 
   private void assertThatActivitiesHaveAllImportantInformation(List<HistoricActivityInstance> completedHistoricActivityInstances) {
     HistoricActivityInstance startEvent = null, endEvent = null;

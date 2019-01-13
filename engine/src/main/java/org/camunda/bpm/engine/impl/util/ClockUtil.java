@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,6 +15,8 @@
  */
 package org.camunda.bpm.engine.impl.util;
 
+import org.joda.time.DateTimeUtils;
+
 import java.util.Date;
 
 
@@ -20,21 +25,30 @@ import java.util.Date;
  */
 public class ClockUtil {
 
-  private volatile static Date CURRENT_TIME = null;
-
   public static void setCurrentTime(Date currentTime) {
-    ClockUtil.CURRENT_TIME = currentTime;
+    DateTimeUtils.setCurrentMillisFixed(currentTime.getTime());
   }
 
   public static void reset() {
-    ClockUtil.CURRENT_TIME = null;
+    resetClock();
   }
 
   public static Date getCurrentTime() {
-    if (CURRENT_TIME != null) {
-      return CURRENT_TIME;
-    }
-    return new Date();
+    return now();
+  }
+
+  public static Date now() {
+    return new Date(DateTimeUtils.currentTimeMillis());
+  }
+
+  public static Date offset(Long offsetInMillis) {
+    DateTimeUtils.setCurrentMillisOffset(offsetInMillis);
+    return new Date(DateTimeUtils.currentTimeMillis());
+  }
+
+  public static Date resetClock() {
+    DateTimeUtils.setCurrentMillisSystem();
+    return new Date(DateTimeUtils.currentTimeMillis());
   }
 
 }

@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -10,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.camunda.bpm.engine.test.api.history;
 
 import java.text.ParseException;
@@ -30,7 +32,7 @@ import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.jobexecutor.historycleanup.HistoryCleanupJobHandlerConfiguration;
 import org.camunda.bpm.engine.impl.persistence.entity.JobEntity;
 import org.camunda.bpm.engine.impl.util.ClockUtil;
-import org.camunda.bpm.engine.impl.util.json.JSONObject;
+import org.camunda.bpm.engine.impl.util.JsonUtil;
 import org.camunda.bpm.engine.runtime.Job;
 import org.camunda.bpm.engine.test.RequiredHistoryLevel;
 import org.junit.Rule;
@@ -248,6 +250,7 @@ public class HistoryCleanupOnEngineBootstrapTest {
 
   @Test
   public void testBatchWindowOneDayOfWeek() throws ParseException {
+    ClockUtil.setCurrentTime(sdf.parse("2018-05-14T22:00:00"));       //monday
     //given
     final ProcessEngineConfigurationImpl configuration = (ProcessEngineConfigurationImpl)ProcessEngineConfiguration.createStandaloneInMemProcessEngineConfiguration();
     //we have batch window only once per week - Monday afternoon
@@ -256,7 +259,6 @@ public class HistoryCleanupOnEngineBootstrapTest {
 
     //when
     //we're on Monday evening
-    ClockUtil.setCurrentTime(sdf.parse("2018-05-14T22:00:00"));       //monday
     //and we bootstrap the engine
     ProcessEngine engine = configuration.buildProcessEngine();
 
@@ -354,7 +356,7 @@ public class HistoryCleanupOnEngineBootstrapTest {
 
   protected HistoryCleanupJobHandlerConfiguration getHistoryCleanupJobHandlerConfiguration(Job job) {
     return HistoryCleanupJobHandlerConfiguration
-          .fromJson(new JSONObject(((JobEntity) job).getJobHandlerConfigurationRaw()));
+          .fromJson(JsonUtil.asObject(((JobEntity) job).getJobHandlerConfigurationRaw()));
   }
 
   protected void closeProcessEngine(ProcessEngine processEngine) {

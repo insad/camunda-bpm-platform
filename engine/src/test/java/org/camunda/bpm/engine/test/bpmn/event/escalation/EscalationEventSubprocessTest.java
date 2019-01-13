@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -10,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.camunda.bpm.engine.test.bpmn.event.escalation;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.camunda.bpm.engine.ProcessEngineConfiguration;
 import org.camunda.bpm.engine.impl.test.PluggableProcessEngineTestCase;
-import org.camunda.bpm.engine.impl.util.ClockUtil;
 import org.camunda.bpm.engine.runtime.Job;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.task.Task;
 import org.camunda.bpm.engine.test.Deployment;
-import org.camunda.bpm.model.bpmn.Bpmn;
+import org.camunda.bpm.engine.test.RequiredHistoryLevel;
 
 /**
  * @author Philipp Ossler
@@ -44,7 +45,8 @@ public class EscalationEventSubprocessTest extends PluggableProcessEngineTestCas
 
   /** CAM-9220 (https://app.camunda.com/jira/browse/CAM-9220) */
   @Deployment
-  public void IGNORE_FAILING_testThrowEscalationEventFromEventSubprocess() {
+  @RequiredHistoryLevel(ProcessEngineConfiguration.HISTORY_FULL)
+  public void testThrowEscalationEventFromEventSubprocess() {
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("embeddedEventSubprocess");
 
     Job job = managementService.createJobQuery().singleResult();
@@ -59,7 +61,6 @@ public class EscalationEventSubprocessTest extends PluggableProcessEngineTestCas
 
     // second timer job shouldn't be available
     job = managementService.createJobQuery().singleResult();
-    managementService.executeJob(job.getId());
     assertNull(job);
 
     // there should only be one completed Escalation Catch Boundary Event

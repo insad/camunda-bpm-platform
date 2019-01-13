@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,8 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.camunda.bpm.engine.authorization.Permissions;
-import org.camunda.bpm.engine.authorization.Resources;
+import org.camunda.bpm.engine.authorization.BatchPermissions;
 import org.camunda.bpm.engine.batch.Batch;
 import org.camunda.bpm.engine.history.UserOperationLogEntry;
 import org.camunda.bpm.engine.impl.ModificationBatchConfiguration;
@@ -27,6 +29,7 @@ import org.camunda.bpm.engine.impl.ProcessEngineLogger;
 import org.camunda.bpm.engine.impl.ProcessInstanceModificationBuilderImpl;
 import org.camunda.bpm.engine.impl.batch.BatchEntity;
 import org.camunda.bpm.engine.impl.batch.BatchJobHandler;
+import org.camunda.bpm.engine.impl.cfg.CommandChecker;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
@@ -56,7 +59,7 @@ public class ModifyProcessInstanceAsyncCmd implements Command<Batch> {
     ExecutionEntity processInstance = executionManager.findExecutionById(processInstanceId);
     ensureProcessInstanceExists(processInstanceId, processInstance);
 
-    commandContext.getAuthorizationManager().checkAuthorization(Permissions.CREATE, Resources.BATCH);
+    checkPermissions(commandContext);
 
     commandContext.getOperationLogManager().logProcessInstanceOperation(getLogEntryOperation(),
       processInstanceId,
@@ -74,6 +77,12 @@ public class ModifyProcessInstanceAsyncCmd implements Command<Batch> {
 
     batch.createSeedJob();
     return batch;
+  }
+
+  protected void checkPermissions(CommandContext commandContext) {
+    for(CommandChecker checker : commandContext.getProcessEngineConfiguration().getCommandCheckers()) {
+      checker.checkCreateBatch(BatchPermissions.CREATE_BATCH_MODIFY_PROCESS_INSTANCES);
+    }
   }
 
   protected BatchEntity createBatch(CommandContext commandContext, List<AbstractProcessInstanceModificationCommand> instructions,
@@ -97,7 +106,7 @@ public class ModifyProcessInstanceAsyncCmd implements Command<Batch> {
     batch.setInvocationsPerBatchJob(processEngineConfiguration.getInvocationsPerBatchJob());
     batch.setConfigurationBytes(batchJobHandler.writeConfiguration(configuration));
     batch.setTenantId(tenantId);
-    commandContext.getBatchManager().insert(batch);
+    commandContext.getBatchManager().insertBatch(batch);
 
     return batch;
   }

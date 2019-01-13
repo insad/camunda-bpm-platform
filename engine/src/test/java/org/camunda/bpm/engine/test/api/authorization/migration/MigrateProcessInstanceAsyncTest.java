@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +22,7 @@ import static org.camunda.bpm.engine.test.api.runtime.migration.ModifiableBpmnMo
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.camunda.bpm.engine.authorization.BatchPermissions;
 import org.camunda.bpm.engine.authorization.Permissions;
 import org.camunda.bpm.engine.authorization.Resources;
 import org.camunda.bpm.engine.batch.Batch;
@@ -103,10 +107,18 @@ public class MigrateProcessInstanceAsyncTest {
           grant(Resources.PROCESS_DEFINITION, "*", "userId", Permissions.MIGRATE_INSTANCE))
         .succeeds(),
       scenario()
+        .withAuthorizations(
+          grant(Resources.BATCH, "*", "userId", BatchPermissions.CREATE_BATCH_MIGRATE_PROCESS_INSTANCES),
+          grant(Resources.PROCESS_INSTANCE, "processInstance", "userId", Permissions.READ),
+          grant(Resources.PROCESS_DEFINITION, "*", "userId", Permissions.MIGRATE_INSTANCE))
+        .succeeds(),
+      scenario()
          .withAuthorizations(
            grant(Resources.PROCESS_INSTANCE, "processInstance", "userId", Permissions.READ))
          .failsDueToRequired(
-           grant(Resources.BATCH, "*", "userId", Permissions.CREATE)));
+           grant(Resources.BATCH, "*", "userId", Permissions.CREATE),
+           grant(Resources.BATCH, "*", "userId", BatchPermissions.CREATE_BATCH_MIGRATE_PROCESS_INSTANCES))
+         );
   }
 
   @Before
@@ -154,6 +166,8 @@ public class MigrateProcessInstanceAsyncTest {
 
     // then
     if (authRule.assertScenario(scenario)) {
+      Assert.assertEquals("userId", batch.getCreateUserId());
+
       Assert.assertEquals(1, engineRule.getManagementService().createBatchQuery().count());
     }
 

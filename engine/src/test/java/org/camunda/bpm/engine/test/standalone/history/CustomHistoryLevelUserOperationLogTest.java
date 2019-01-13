@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -123,7 +126,10 @@ public class CustomHistoryLevelUserOperationLogTest {
   @After
   public void tearDown() throws Exception {
     identityService.clearAuthentication();
-    managementService.purge();
+    List<UserOperationLogEntry> logs = query().list();
+    for (UserOperationLogEntry log : logs) {
+      historyService.deleteUserOperationLogEntry(log.getId());
+    }
   }
 
   @Test
@@ -546,6 +552,26 @@ public class CustomHistoryLevelUserOperationLogTest {
     verifyQueryResults(query, 1);
 
     repositoryService.deleteDeployment(deploymentId, true);
+  }
+
+  @Test
+  @Deployment(resources = { ONE_TASK_PROCESS })
+  public void testUserOperationLogDeletion() {
+    // given
+    process = runtimeService.startProcessInstanceByKey("oneTaskProcess");
+    runtimeService.setVariable(process.getId(), "testVariable1", "THIS IS TESTVARIABLE!!!");
+
+    // assume
+    verifyVariableOperationAsserts(1, UserOperationLogEntry.OPERATION_TYPE_SET_VARIABLE);
+
+    // when
+    UserOperationLogEntry log = query().entityType(EntityTypes.VARIABLE).operationType(UserOperationLogEntry.OPERATION_TYPE_SET_VARIABLE).singleResult();
+    assertNotNull(log);
+    historyService.deleteUserOperationLogEntry(log.getId());
+
+    // then
+    List<UserOperationLogEntry> list = query().entityType(EntityTypes.VARIABLE).operationType(UserOperationLogEntry.OPERATION_TYPE_SET_VARIABLE).list();
+    assertEquals(0, list.size());
   }
 
   protected void verifyQueryResults(UserOperationLogQuery query, int countExpected) {

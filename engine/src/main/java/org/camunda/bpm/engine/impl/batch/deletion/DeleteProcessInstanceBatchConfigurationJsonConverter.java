@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -10,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.camunda.bpm.engine.impl.batch.deletion;
 
 import org.camunda.bpm.engine.impl.json.JsonObjectConverter;
 import org.camunda.bpm.engine.impl.util.JsonUtil;
-import org.camunda.bpm.engine.impl.util.json.JSONObject;
+import com.google.gson.JsonObject;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,8 +34,8 @@ public class DeleteProcessInstanceBatchConfigurationJsonConverter extends JsonOb
   public static final String SKIP_CUSTOM_LISTENERS = "skipCustomListeners";
   public static final String SKIP_SUBPROCESSES = "skipSubprocesses";
 
-  public JSONObject toJsonObject(DeleteProcessInstanceBatchConfiguration configuration) {
-    JSONObject json = new JSONObject();
+  public JsonObject toJsonObject(DeleteProcessInstanceBatchConfiguration configuration) {
+    JsonObject json = JsonUtil.createObject();
 
     JsonUtil.addField(json, DELETE_REASON, configuration.getDeleteReason());
     JsonUtil.addListField(json, PROCESS_INSTANCE_IDS, configuration.getIds());
@@ -43,11 +44,11 @@ public class DeleteProcessInstanceBatchConfigurationJsonConverter extends JsonOb
     return json;
   }
 
-  public DeleteProcessInstanceBatchConfiguration toObject(JSONObject json) {
+  public DeleteProcessInstanceBatchConfiguration toObject(JsonObject json) {
     DeleteProcessInstanceBatchConfiguration configuration =
-        new DeleteProcessInstanceBatchConfiguration(readProcessInstanceIds(json), json.optBoolean(SKIP_CUSTOM_LISTENERS), json.optBoolean(SKIP_SUBPROCESSES));
+      new DeleteProcessInstanceBatchConfiguration(readProcessInstanceIds(json), JsonUtil.getBoolean(json, SKIP_CUSTOM_LISTENERS), JsonUtil.getBoolean(json, SKIP_SUBPROCESSES));
 
-    String deleteReason = json.optString(DELETE_REASON);
+    String deleteReason = JsonUtil.getString(json, DELETE_REASON);
     if (deleteReason != null && !deleteReason.isEmpty()) {
       configuration.setDeleteReason(deleteReason);
     }
@@ -55,12 +56,7 @@ public class DeleteProcessInstanceBatchConfigurationJsonConverter extends JsonOb
     return configuration;
   }
 
-  protected List<String> readProcessInstanceIds(JSONObject jsonObject) {
-    List<Object> objects = JsonUtil.jsonArrayAsList(jsonObject.getJSONArray(PROCESS_INSTANCE_IDS));
-    List<String> processInstanceIds = new ArrayList<String>();
-    for (Object object : objects) {
-      processInstanceIds.add((String) object);
-    }
-    return processInstanceIds;
+  protected List<String> readProcessInstanceIds(JsonObject jsonObject) {
+    return JsonUtil.asList(JsonUtil.getArray(jsonObject, PROCESS_INSTANCE_IDS));
   }
 }

@@ -52,8 +52,6 @@
       <bpmn:outgoing>SequenceFlow_0gs85wf</bpmn:outgoing>
     </bpmn:userTask>
   </bpmn:process>
-  <bpmn:signal id="Signal_0t5cqw9" name="test-signal-throw" />
-  <bpmn:escalation id="Escalation_07ax5bb" name="esc-test2-throw" escalationCode="esc-test2-throw" />
   <bpmn:escalation id="Escalation_149a92o" name="esc-test3-throw" escalationCode="esc-test3-throw" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="embeddedEventSubprocess">

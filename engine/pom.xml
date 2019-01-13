@@ -9,7 +9,7 @@
     <groupId>org.camunda.bpm</groupId>
     <artifactId>camunda-database-settings</artifactId>
     <relativePath>../database</relativePath>
-    <version>7.10.0-SNAPSHOT</version>
+    <version>7.11.0-SNAPSHOT</version>
   </parent>
 
   <dependencies>
@@ -60,12 +60,6 @@
       <artifactId>commons-email</artifactId>
     </dependency>
     <dependency>
-      <!-- required for building with JDK 5 -->
-      <groupId>org.livetribe</groupId>
-      <artifactId>livetribe-jsr223</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.mybatis</groupId>
       <artifactId>mybatis</artifactId>
     </dependency>
@@ -104,6 +98,11 @@
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jta_1.1_spec</artifactId>
       <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
     </dependency>
 
     <dependency>
@@ -184,6 +183,12 @@
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-library</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
       <scope>test</scope>
     </dependency>
 
@@ -315,6 +320,41 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <configuration>
+          <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+          <createSourcesJar>true</createSourcesJar>
+          <createDependencyReducedPom>false</createDependencyReducedPom>
+          <artifactSet>
+            <excludes>
+              <exclude>org.camunda.bpm.model:*</exclude>
+              <exclude>org.camunda.bpm.dmn:*</exclude>
+              <exclude>org.camunda.commons:*</exclude>
+
+              <exclude>org.springframework:*</exclude>
+              <exclude>org.slf4j:*</exclude>
+              <exclude>org.apache.commons:*</exclude>
+              <exclude>com.sun.mail:*</exclude>
+              <exclude>javax.activation:*</exclude>
+              <exclude>org.mybatis:mybatis:*</exclude>
+              <exclude>commons-logging:*</exclude>
+              <exclude>joda-time:*</exclude>
+            </excludes>
+          </artifactSet>
+          <relocations>
+            <relocation>
+              <pattern>com.google.gson</pattern>
+              <shadedPattern>camundajar.com.google.gson</shadedPattern>
+            </relocation>
+          </relocations>
+          <transformers>
+            <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+          </transformers>
+          <shadeTestJar>true</shadeTestJar>
+        </configuration>
       </plugin>
     </plugins>
     <pluginManagement>
@@ -707,6 +747,9 @@
                 <exclude>**/DeploymentTest.java</exclude>
                 <exclude>**/CustomHistoryLevelUserOperationLogTest.java</exclude>
                 <exclude>**/CustomHistoryLevelWithoutUserOperationLogTest.java</exclude>
+                <exclude>**/CustomHistoryLevelIncidentTest.java</exclude>
+                <exclude>**/CustomHistoryLevelIdentityLinkTest.java</exclude>
+                <exclude>**/removaltime/cleanup/HistoryCleanupScheduler*Test.java</exclude>
               </excludes>
             </configuration>
           </plugin>

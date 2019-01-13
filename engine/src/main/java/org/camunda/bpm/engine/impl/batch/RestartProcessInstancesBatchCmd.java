@@ -1,3 +1,18 @@
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.camunda.bpm.engine.impl.batch;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotContainsNull;
@@ -10,12 +25,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.camunda.bpm.engine.BadUserRequestException;
-import org.camunda.bpm.engine.authorization.Permissions;
-import org.camunda.bpm.engine.authorization.Resources;
+import org.camunda.bpm.engine.authorization.BatchPermissions;
 import org.camunda.bpm.engine.batch.Batch;
 import org.camunda.bpm.engine.impl.ProcessEngineLogger;
 import org.camunda.bpm.engine.impl.RestartProcessInstanceBuilderImpl;
 import org.camunda.bpm.engine.impl.RestartProcessInstancesBatchConfiguration;
+import org.camunda.bpm.engine.impl.cfg.CommandChecker;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.impl.cmd.AbstractProcessInstanceModificationCommand;
 import org.camunda.bpm.engine.impl.cmd.AbstractRestartProcessInstanceCmd;
@@ -46,7 +61,7 @@ public class RestartProcessInstancesBatchCmd extends AbstractRestartProcessInsta
     ensureNotEmpty(BadUserRequestException.class, "Process instance ids cannot be empty", "processInstanceIds", processInstanceIds);
     ensureNotContainsNull(BadUserRequestException.class, "Process instance ids cannot be null", "processInstanceIds", processInstanceIds);
 
-    commandContext.getAuthorizationManager().checkAuthorization(Permissions.CREATE, Resources.BATCH);
+    checkPermissions(commandContext);
     ProcessDefinitionEntity processDefinition = getProcessDefinition(commandContext, builder.getProcessDefinitionId());;
 
     ensureNotNull(BadUserRequestException.class, "Process definition cannot be null", processDefinition);
@@ -68,6 +83,12 @@ public class RestartProcessInstancesBatchCmd extends AbstractRestartProcessInsta
 
   }
 
+  protected void checkPermissions(CommandContext commandContext) {
+    for(CommandChecker checker : commandContext.getProcessEngineConfiguration().getCommandCheckers()) {
+      checker.checkCreateBatch(BatchPermissions.CREATE_BATCH_RESTART_PROCESS_INSTANCES);
+    }
+  }
+
   protected BatchEntity createBatch(CommandContext commandContext, List<AbstractProcessInstanceModificationCommand> instructions,
       List<String> processInstanceIds, ProcessDefinitionEntity processDefinition) {
     ProcessEngineConfigurationImpl processEngineConfiguration = commandContext.getProcessEngineConfiguration();
@@ -83,7 +104,7 @@ public class RestartProcessInstancesBatchCmd extends AbstractRestartProcessInsta
     batch.setInvocationsPerBatchJob(processEngineConfiguration.getInvocationsPerBatchJob());
     batch.setConfigurationBytes(batchJobHandler.writeConfiguration(configuration));
     batch.setTenantId(processDefinition.getTenantId());
-    commandContext.getBatchManager().insert(batch);
+    commandContext.getBatchManager().insertBatch(batch);
 
     return batch;
   }

@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +23,7 @@ import java.util.Set;
 
 import org.camunda.bpm.application.ProcessApplicationReference;
 import org.camunda.bpm.application.ProcessApplicationRegistration;
+import org.camunda.bpm.engine.authorization.BatchPermissions;
 import org.camunda.bpm.engine.authorization.Groups;
 import org.camunda.bpm.engine.authorization.Permissions;
 import org.camunda.bpm.engine.authorization.Resources;
@@ -837,7 +841,8 @@ public interface ManagementService {
    *
    * @throws BadUserRequestException if jobIds is null
    * @throws AuthorizationException
-   *          If the user has no {@link Permissions#CREATE} permission on {@link Resources#BATCH}.
+   *          If the user has no {@link Permissions#CREATE} or
+   *          {@link BatchPermissions#CREATE_BATCH_SET_JOB_RETRIES} permission on {@link Resources#BATCH}.
    */
   Batch setJobRetriesAsync(List<String> jobIds, int retries);
 
@@ -853,7 +858,8 @@ public interface ManagementService {
    *
    * @throws BadUserRequestException if jobQuery is null
    * @throws AuthorizationException
-   *          If the user has no {@link Permissions#CREATE} permission on {@link Resources#BATCH}.
+   *          If the user has no {@link Permissions#CREATE} or
+   *          {@link BatchPermissions#CREATE_BATCH_SET_JOB_RETRIES} permission on {@link Resources#BATCH}.
    */
   Batch setJobRetriesAsync(JobQuery jobQuery, int retries);
 
@@ -873,7 +879,8 @@ public interface ManagementService {
    *
    * @throws BadUserRequestException if neither jobIds, nor jobQuery is provided or result in empty list
    * @throws AuthorizationException
-   *          If the user has no {@link Permissions#CREATE} permission on {@link Resources#BATCH}.
+   *          If the user has no {@link Permissions#CREATE} or
+   *          {@link BatchPermissions#CREATE_BATCH_SET_JOB_RETRIES} permission on {@link Resources#BATCH}.
    */
   Batch setJobRetriesAsync(List<String> jobIds, JobQuery jobQuery, int retries);
 
@@ -892,7 +899,8 @@ public interface ManagementService {
    * @param retries number of retries.
    *
    * @throws AuthorizationException
-   *          If the user has no {@link Permissions#CREATE} permission on {@link Resources#BATCH}.
+   *          If the user has no {@link Permissions#CREATE} or
+   *          {@link BatchPermissions#CREATE_BATCH_SET_JOB_RETRIES} permission on {@link Resources#BATCH}.
    */
   Batch setJobRetriesAsync (List<String> processInstanceIds, ProcessInstanceQuery query, int retries);
 
@@ -1037,13 +1045,23 @@ public interface ManagementService {
    */
   String getJobExceptionStacktrace(String jobId);
 
-  /** get the list of properties. */
+  /**
+   * @return a map of all properties.
+   *
+   * @throws AuthorizationException
+   *          If the user is not a member of the group {@link Groups#CAMUNDA_ADMIN}.
+   */
   Map<String, String> getProperties();
 
-  /** Set the value for a property.
+  /**
+   * Set the value for a property.
    *
-   *  @param name the name of the property.
-   *  @param value the new value for the property.
+   * @param name the name of the property.
+   *
+   * @param value the new value for the property.
+   *
+   * @throws AuthorizationException
+   *          If the user is not a member of the group {@link Groups#CAMUNDA_ADMIN}.
    */
   void setProperty(String name, String value);
 
@@ -1051,6 +1069,9 @@ public interface ManagementService {
    * Deletes a property by name. If the property does not exist, the request is ignored.
    *
    * @param name the name of the property to delete
+   *
+   * @throws AuthorizationException
+   *          If the user is not a member of the group {@link Groups#CAMUNDA_ADMIN}.
    */
   void deleteProperty(String name);
 

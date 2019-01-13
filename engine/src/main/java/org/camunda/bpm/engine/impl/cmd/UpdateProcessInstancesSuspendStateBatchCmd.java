@@ -1,4 +1,7 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -17,14 +20,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.camunda.bpm.engine.BadUserRequestException;
-import org.camunda.bpm.engine.authorization.Permissions;
-import org.camunda.bpm.engine.authorization.Resources;
+import org.camunda.bpm.engine.authorization.BatchPermissions;
 import org.camunda.bpm.engine.batch.Batch;
 import org.camunda.bpm.engine.impl.UpdateProcessInstancesSuspensionStateBuilderImpl;
 import org.camunda.bpm.engine.impl.batch.BatchConfiguration;
 import org.camunda.bpm.engine.impl.batch.BatchEntity;
 import org.camunda.bpm.engine.impl.batch.BatchJobHandler;
 import org.camunda.bpm.engine.impl.batch.update.UpdateProcessInstancesSuspendStateBatchConfiguration;
+import org.camunda.bpm.engine.impl.cfg.CommandChecker;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
 import org.camunda.bpm.engine.impl.interceptor.CommandExecutor;
@@ -69,7 +72,7 @@ public class UpdateProcessInstancesSuspendStateBatchCmd extends AbstractUpdatePr
     batch.setBatchJobsPerSeed(processEngineConfiguration.getBatchJobsPerSeed());
     batch.setInvocationsPerBatchJob(processEngineConfiguration.getInvocationsPerBatchJob());
     batch.setConfigurationBytes(batchJobHandler.writeConfiguration(configuration));
-    commandContext.getBatchManager().insert(batch);
+    commandContext.getBatchManager().insertBatch(batch);
 
     return batch;
   }
@@ -91,7 +94,9 @@ public class UpdateProcessInstancesSuspendStateBatchCmd extends AbstractUpdatePr
   }
 
   protected void checkAuthorizations(CommandContext commandContext) {
-    commandContext.getAuthorizationManager().checkAuthorization(Permissions.CREATE, Resources.BATCH);
+    for(CommandChecker checker : commandContext.getProcessEngineConfiguration().getCommandCheckers()) {
+      checker.checkCreateBatch(BatchPermissions.CREATE_BATCH_UPDATE_PROCESS_INSTANCES_SUSPEND_STATE);
+    }
   }
 
 }

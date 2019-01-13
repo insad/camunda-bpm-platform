@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2018 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -10,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.camunda.bpm.engine.test.api.history;
 
 import java.text.ParseException;
@@ -41,7 +43,6 @@ import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.impl.cmd.HistoryCleanupCmd;
 import org.camunda.bpm.engine.impl.interceptor.Command;
 import org.camunda.bpm.engine.impl.interceptor.CommandContext;
-import org.camunda.bpm.engine.impl.jobexecutor.historycleanup.BatchWindow;
 import org.camunda.bpm.engine.impl.jobexecutor.historycleanup.HistoryCleanupHelper;
 import org.camunda.bpm.engine.impl.jobexecutor.historycleanup.HistoryCleanupJobHandlerConfiguration;
 import org.camunda.bpm.engine.impl.metrics.Meter;
@@ -49,7 +50,7 @@ import org.camunda.bpm.engine.impl.persistence.entity.HistoricIncidentEntity;
 import org.camunda.bpm.engine.impl.persistence.entity.JobEntity;
 import org.camunda.bpm.engine.impl.util.ClockUtil;
 import org.camunda.bpm.engine.impl.util.ExceptionUtil;
-import org.camunda.bpm.engine.impl.util.json.JSONObject;
+import org.camunda.bpm.engine.impl.util.JsonUtil;
 import org.camunda.bpm.engine.management.MetricIntervalValue;
 import org.camunda.bpm.engine.management.Metrics;
 import org.camunda.bpm.engine.management.MetricsQuery;
@@ -73,6 +74,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.RuleChain;
+
+import static org.camunda.bpm.engine.ProcessEngineConfiguration.HISTORY_CLEANUP_STRATEGY_END_TIME_BASED;
+import static org.camunda.bpm.engine.ProcessEngineConfiguration.HISTORY_CLEANUP_STRATEGY_REMOVAL_TIME_BASED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -142,6 +146,7 @@ public class HistoryCleanupTest {
     defaultStartTime = processEngineConfiguration.getHistoryCleanupBatchWindowStartTime();
     defaultEndTime = processEngineConfiguration.getHistoryCleanupBatchWindowEndTime();
     defaultBatchSize = processEngineConfiguration.getHistoryCleanupBatchSize();
+    processEngineConfiguration.setHistoryCleanupStrategy(HISTORY_CLEANUP_STRATEGY_END_TIME_BASED);
   }
 
   @After
@@ -150,6 +155,7 @@ public class HistoryCleanupTest {
     processEngineConfiguration.setHistoryCleanupBatchWindowStartTime(defaultStartTime);
     processEngineConfiguration.setHistoryCleanupBatchWindowEndTime(defaultEndTime);
     processEngineConfiguration.setHistoryCleanupBatchSize(defaultBatchSize);
+    processEngineConfiguration.setHistoryCleanupStrategy(HISTORY_CLEANUP_STRATEGY_REMOVAL_TIME_BASED);
 
     processEngineConfiguration.getCommandExecutorTxRequired().execute(new Command<Void>() {
       public Void execute(CommandContext commandContext) {
@@ -267,7 +273,7 @@ public class HistoryCleanupTest {
 
   private HistoryCleanupJobHandlerConfiguration getHistoryCleanupJobHandlerConfiguration(Job job) {
     return HistoryCleanupJobHandlerConfiguration
-          .fromJson(new JSONObject(((JobEntity) job).getJobHandlerConfigurationRaw()));
+          .fromJson(JsonUtil.asObject(((JobEntity) job).getJobHandlerConfigurationRaw()));
   }
 
   private void runHistoryCleanup() {
@@ -1215,7 +1221,7 @@ public class HistoryCleanupTest {
 
   private HistoryCleanupJobHandlerConfiguration getConfiguration(JobEntity jobEntity) {
     String jobHandlerConfigurationRaw = jobEntity.getJobHandlerConfigurationRaw();
-    return HistoryCleanupJobHandlerConfiguration.fromJson(new JSONObject(jobHandlerConfigurationRaw));
+    return HistoryCleanupJobHandlerConfiguration.fromJson(JsonUtil.asObject(jobHandlerConfigurationRaw));
   }
 
   private void prepareData(int instanceCount) {

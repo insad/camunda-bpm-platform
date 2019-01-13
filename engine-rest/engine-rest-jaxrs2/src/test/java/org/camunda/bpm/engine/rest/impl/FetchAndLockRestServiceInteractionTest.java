@@ -1,8 +1,11 @@
-/* Licensed under the Apache License, Version 2.0 (the "License");
+/*
+ * Copyright © 2013-2019 camunda services GmbH and various authors (info@camunda.com)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,7 +15,7 @@
  */
 package org.camunda.bpm.engine.rest.impl;
 
-import com.jayway.restassured.http.ContentType;
+import io.restassured.http.ContentType;
 import org.camunda.bpm.engine.ExternalTaskService;
 import org.camunda.bpm.engine.IdentityService;
 import org.camunda.bpm.engine.ProcessEngineException;
@@ -38,12 +41,13 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import javax.servlet.ServletContextEvent;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.jayway.restassured.RestAssured.given;
+import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -55,6 +59,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -117,7 +122,7 @@ public class FetchAndLockRestServiceInteractionTest extends AbstractRestServiceT
     List<Tenant> tenantMocks = Collections.singletonList(MockProvider.createMockTenant());
     tenantIds = setupTenantQueryMock(tenantMocks);
 
-    new FetchAndLockContextListener().contextInitialized(null);
+    new FetchAndLockContextListener().contextInitialized(mock(ServletContextEvent.class, RETURNS_DEEP_STUBS));
   }
 
   @Test
@@ -213,7 +218,7 @@ public class FetchAndLockRestServiceInteractionTest extends AbstractRestServiceT
 
   @Test
   public void shouldThrowInvalidRequestExceptionOnMaxTimeoutExceeded() {
-    FetchExternalTasksExtendedDto fetchExternalTasksDto = createDto(FetchAndLockHandlerImpl.MAX_TIMEOUT + 1);
+    FetchExternalTasksExtendedDto fetchExternalTasksDto = createDto(FetchAndLockHandlerImpl.MAX_REQUEST_TIMEOUT + 1);
 
     given()
       .contentType(ContentType.JSON)
